@@ -5,25 +5,44 @@ const version = 'v0.1.0';
 const contractName = 'Payroll';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  
+  async function main() {
+    // Hardhat always runs the compile task when running scripts with its command
+    // line interface.
+    //
+    // If this script is run directly using `node` you may want to call compile
+    // manually to make sure everything is compiled
+    // await hre.run('compile');
 
-  const {deployer, proxyOwner} = await getNamedAccounts();
+    const {deployments, getNamedAccounts} = hre;
 
-  await deploy(contractName, {
-    contract: contractName,
-    from: deployer,
-    proxy: {
-      owner: proxyOwner,
-      proxyContract: 'OpenZeppelinTransparentProxy',
-      execute: {
-        methodName: 'initialize',
-        args: ['Hello, world!'],
+    const {deploy} = deployments;
+
+    const {deployer, proxyOwner} = await getNamedAccounts();
+
+    await deploy(contractName, {
+      contract: contractName,
+      from: deployer,
+      proxy: {
+        owner: proxyOwner,
+        proxyContract: 'OpenZeppelinTransparentProxy',
+        execute: {
+          methodName: 'initialize',
+          args: [deployer],
+        },
       },
-    },
-    log: true,
+      log: true,
+    });
+
+    return true;
+  }  
+
+  // We recommend this pattern to be able to use async/await everywhere
+  // and properly handle errors.
+  await main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
   });
-  return true;
 };
 
 const id = contractName + version;

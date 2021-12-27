@@ -2,7 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-contract Payroll {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "hardhat/console.sol";
+
+contract Payroll is Initializable {
 
     modifier onlyOwner {
         require(
@@ -24,11 +27,19 @@ contract Payroll {
     constructor() {
         owner = msg.sender;
     }
+
+    function initialize(address _owner) public initializer {
+        console.log("Deploying a Payroll with owner:", _owner);
+        owner = _owner;
+    }
+
     event Received(address, uint);
+
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
-
+ 
+    //TODO: change to a transfer with a list of accounts
     function registerAmmount(address _address, uint256 _ammount) public onlyOwner{
         require(_address != address(0), "ERC20: cannot register a 0 address");
         if(ammountsToTransfer[_address] != 0){
