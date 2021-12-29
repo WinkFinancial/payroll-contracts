@@ -1,7 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 
-const version = 'v0.1.0';
+const version = 'v0.2.0';
 const contractName = 'Payroll';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
