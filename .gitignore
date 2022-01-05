@@ -108,3 +108,6 @@ artifacts/
 
 # Cache
 cache/
+
+# Typechain artifacts
+typechain-types/*
