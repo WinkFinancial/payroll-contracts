@@ -1,1 +1,0 @@
-# Scripts for the crypto payroll application
