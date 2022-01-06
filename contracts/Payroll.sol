@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../interfaces/IERC20.sol";
-import "hardhat/console.sol";
+import "./interfaces/IERC20Basic.sol";
 
 /**
  * @title A contract that allows multiple payments in one transaction
@@ -16,18 +15,9 @@ contract Payroll is Initializable, AccessControl {
     bytes32 public constant PAYER_ROLE = keccak256("PAYER_ROLE");
     bytes32 public constant ADMIN_ROLE = 0x00;
 
-    modifier onlyOwner {
-        require(
-            msg.sender == owner,
-            "Only owner can call this function."
-        );
-        _;
-    }
-
     address public owner;
 
     function initialize(address _owner) public initializer {
-        console.log("Deploying a Payroll with owner: ", _owner);
         owner = _owner;
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(PAYER_ROLE, _owner);
@@ -47,7 +37,6 @@ contract Payroll is Initializable, AccessControl {
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer)
     external onlyRole(PAYER_ROLE) {
-        console.log("Performing a batch payment");
         require(_amountsToTransfer.length == _receivers.length, "Both arrays must have the same length");
 
         address currentReceiver;
@@ -56,14 +45,10 @@ contract Payroll is Initializable, AccessControl {
 
         for (uint256 i = 0; i < _receivers.length; i++) {
             currentReceiver = _receivers[i];
-            console.log("Paying to: ", currentReceiver);
             require(_receivers[i] != address(0), "ERC20: cannot register a 0 address");
-
             currentAmount = _amountsToTransfer[i];
-            console.log("Amount: ", currentAmount);
             erc20token.transferFrom(msg.sender, currentReceiver, currentAmount);
         }
-        console.log("Finished batch payment");
         emit BatchPaymentFinished(_receivers, _amountsToTransfer);
     }
 }
