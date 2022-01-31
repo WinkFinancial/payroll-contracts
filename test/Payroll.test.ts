@@ -1,7 +1,5 @@
-import { assert, expect, use } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import { expect} from 'chai';
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
-use(chaiAsPromised);
 
 import { Payroll } from '../typechain-types/Payroll'
 
@@ -64,7 +62,10 @@ describe('Payroll', async function () {
     const hardhatToken = await Token.deploy("BNB", "BNB", ethers.BigNumber.from('10'), owner.address);
 
     await hardhatToken.approve(payrollContract.address, ethers.BigNumber.from('10'));
-    await expect(payrollContract.performPayment(hardhatToken.address, [add1.address], [ethers.BigNumber.from('500')])).eventually.to.rejectedWith(Error, "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'");
+    const transactionWithExceededBalance = payrollContract.performPayment(hardhatToken.address, [add1.address], [ethers.BigNumber.from('500')])
+
+    await expect(transactionWithExceededBalance)
+      .to.be.revertedWith('ERC20: transfer amount exceeds balance');
   });
 
   it("Should fail if any address is 0", async function () {
@@ -74,8 +75,10 @@ describe('Payroll', async function () {
     const hardhatToken = await Token.deploy("BNB", "BNB", ethers.BigNumber.from('10'), owner.address);
 
     await hardhatToken.approve(payrollContract.address, ethers.BigNumber.from('10'));
-    const callWithAddress0 = payrollContract.performPayment(hardhatToken.address, [add1.address, '0'], [ethers.BigNumber.from('5'), ethers.BigNumber.from('5')]);
-    await expect(callWithAddress0).to.eventually.be.rejectedWith(Error, 'network does not support ENS (operation="ENS", network="unknown", code=UNSUPPORTED_OPERATION, version=providers/5.5.3)');
+    const callWithAddress0 = payrollContract.performPayment(hardhatToken.address, [add1.address, ethers.constants.AddressZero], [ethers.BigNumber.from('5'), ethers.BigNumber.from('5')]);
+
+    await expect(callWithAddress0)
+      .to.be.revertedWith('ERC20: cannot register a 0 address');
   });
 
   it("Should fail if recipients and amounts list are not the same length", async () => {
@@ -87,6 +90,7 @@ describe('Payroll', async function () {
     await hardhatToken.approve(payrollContract.address, ethers.BigNumber.from('100'));
     const callWithDifferentArrayLength = payrollContract.performPayment(hardhatToken.address, [add1.address, add2.address], [ethers.BigNumber.from('5'), ethers.BigNumber.from('50'), ethers.BigNumber.from('25')]);
 
-    await expect(callWithDifferentArrayLength).to.eventually.be.rejectedWith(Error, "VM Exception while processing transaction: reverted with reason string 'Both arrays must have the same length'")
+    await expect(callWithDifferentArrayLength)
+      .to.be.revertedWith("Both arrays must have the same length");
   });
 });
