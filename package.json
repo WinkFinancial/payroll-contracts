@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project",
+  "name": "payroll-contracts",
   "scripts": {
     "lint": "eslint \"**/*.{js,ts}\" && solhint contracts/**/*.sol",
     "format": "prettier --check \"**/*.{ts,js,sol}\"",
