@@ -47,7 +47,7 @@ const config: HardhatUserConfig = {
     rinkeby: {
       live: true,
       url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
-      blockGasLimit: 6800000,
+      blockGasLimit: 8000000,
       chainId: 4,
       hardfork: "istanbul",
       accounts: [
