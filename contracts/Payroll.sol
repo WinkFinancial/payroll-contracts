@@ -23,6 +23,7 @@ contract Payroll is Initializable, AccessControl {
 
     struct Payment {
         address token;
+        uint256 totalAmountToPay;
         address[] receivers;
         uint256[] amountsToTransfer;
     }
@@ -39,9 +40,9 @@ contract Payroll is Initializable, AccessControl {
         initializer
     {
         owner = _owner;
+        swapRouter = ISwapRouter(_swapRouter);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(PAYER_ROLE, _owner);
-        swapRouter = ISwapRouter(_swapRouter);
     }
 
     event BatchPaymentFinished(
@@ -58,7 +59,8 @@ contract Payroll is Initializable, AccessControl {
     /**
      * Perform the swap and then the payment to the given addresses
      * @param _erc20TokenOrigin ERC20 token address to swap for another
-     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps
+     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps and payments.
+     * You must know the total amount of erc20TokenOrigin to spend on swaps and also to spend on payments.
      * @param _deadline The unix timestamp after a swap will fail
      * @param _swaps The array of the Swaps data
      * @param _payments The array of the Payment data
@@ -66,47 +68,70 @@ contract Payroll is Initializable, AccessControl {
      */
     function performSwapAndPayment(
         address _erc20TokenOrigin,
-        uint256 _totalAmountToSwap,
+        uint256 _totalAmountToSpend,
         uint32 _deadline,
         Swap[] calldata _swaps,
         Payment[] calldata _payments
     ) external onlyRole(PAYER_ROLE) {
-        performSwap(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
 
-        for (uint256 i = 0; i < _payments.length; i++) {
-            performPayment(
-                _payments[i].token,
-                _payments[i].receivers,
-                _payments[i].amountsToTransfer
-            );
-        }
+        performMultiPayment(_payments);
+
+        // returns the leftover of erc20TokenOrigin if it was not used in payments
+        returnLeftover(_erc20TokenOrigin);
     }
 
     /**
-     * Perform the swap to the given addresses and amounts
+     * Perform the token transfer and then the payment to the given addresses
+     * @param _payments The array of the Payment data
+     * @notice Currently the function only works with ERC20 tokens
+     */
+    function performTransferAndPayment(Payment[] calldata _payments)
+        external
+        onlyRole(PAYER_ROLE)
+    {
+        // transfer the totalAmountToPay for each token from the msg.sender to this contract
+        // msg.sender must approve this contract for each token
+        for (uint256 i = 0; i < _payments.length; i++) {
+            TransferHelper.safeTransferFrom(
+                _payments[i].token,
+                msg.sender,
+                address(this),
+                _payments[i].totalAmountToPay
+            );
+        }
+
+        performMultiPayment(_payments);
+    }
+
+    /**
+     * Perform the swap to the given token addresses and amounts
      * @param _erc20TokenOrigin ERC20 token address to swap for another
-     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps
+     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps
      * @param _deadline The unix timestamp after a swap will fail
      * @param _swaps The array of the Swaps data
      * @notice Currently the function only works with ERC20 tokens
      */
     function performSwap(
         address _erc20TokenOrigin,
-        uint256 _totalAmountToSwap,
+        uint256 _totalAmountToSpend,
         uint32 _deadline,
         Swap[] calldata _swaps
     ) internal {
+        // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
+        // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(
             _erc20TokenOrigin,
             msg.sender,
             address(this),
-            _totalAmountToSwap
+            _totalAmountToSpend
         );
 
+        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
         TransferHelper.safeApprove(
             _erc20TokenOrigin,
             address(swapRouter),
-            _totalAmountToSwap
+            _totalAmountToSpend
         );
 
         for (uint256 i = 0; i < _swaps.length; i++) {
@@ -120,14 +145,7 @@ contract Payroll is Initializable, AccessControl {
             );
         }
 
-        IERC20Basic erc20token = IERC20Basic(_erc20TokenOrigin);
-
-        TransferHelper.safeTransfer(
-            _erc20TokenOrigin,
-            msg.sender,
-            erc20token.balanceOf(address(this))
-        );
-
+        // removes the approval to swapRouter
         TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), 0);
     }
 
@@ -162,9 +180,27 @@ contract Payroll is Initializable, AccessControl {
                 sqrtPriceLimitX96: 0
             });
 
+        // return the amount spend of tokenIn
         amountIn = swapRouter.exactOutputSingle(params);
 
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+    }
+
+    /**
+     * Perform the payments to the given addresses and amounts
+     * @param _payments The array of the Payment data
+     */
+    function performMultiPayment(Payment[] calldata _payments) internal {
+        for (uint256 i = 0; i < _payments.length; i++) {
+            performPayment(
+                _payments[i].token,
+                _payments[i].receivers,
+                _payments[i].amountsToTransfer
+            );
+
+            // return the leftover for each token after perform all payments
+            returnLeftover(_payments[i].token);
+        }
     }
 
     /**
@@ -178,7 +214,7 @@ contract Payroll is Initializable, AccessControl {
         address _erc20TokenAddress,
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
-    ) public onlyRole(PAYER_ROLE) {
+    ) internal {
         require(
             _amountsToTransfer.length == _receivers.length,
             "Both arrays must have the same length"
@@ -201,5 +237,23 @@ contract Payroll is Initializable, AccessControl {
             );
         }
         emit BatchPaymentFinished(_receivers, _amountsToTransfer);
+    }
+
+    /**
+     * Return all balance of an ERC20 to the msg.sender
+     * @param _erc20TokenAddress The address of the ERC20 token to transfer
+     * @notice Currently the function only works with only one ERC20 token
+     */
+    function returnLeftover(address _erc20TokenAddress) internal {
+        IERC20Basic erc20token = IERC20Basic(_erc20TokenAddress);
+        uint256 accountBalance = erc20token.balanceOf(address(this));
+
+        if (accountBalance > 0) {
+            TransferHelper.safeTransfer(
+                _erc20TokenAddress,
+                msg.sender,
+                accountBalance
+            );
+        }
     }
 }
