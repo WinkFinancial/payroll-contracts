@@ -3,7 +3,7 @@
  */
 import * as dotenv from 'dotenv';
 
-import {HardhatUserConfig} from 'hardhat/config';
+import {HardhatUserConfig, task} from 'hardhat/config';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
@@ -12,45 +12,22 @@ import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
-import 'hardhat-docgen';
-import 'hardhat-abi-exporter';
 
 dotenv.config();
 
 let privKey = process.env.PRIV_KEY || '';
 if (!privKey) {
   console.warn('\x1b[31m', 'Must add privKey to env file (No needed for testing only).');
-  privKey = String('').padStart(64, '0');
 }
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   solidity: {
-    compilers: [
-      {
-        version: '0.8.9',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    ],
+    compilers: [{version: '0.8.4', settings: {}}],
   },
   gasReporter: {
+    enabled: process.env.REPORT_GAS !== undefined && process.env.REPORT_GAS.toLowerCase() === 'true',
     currency: 'USD',
-  },
-  docgen: {
-    path: './docs',
-    clear: true,
-    runOnCompile: true,
-  },
-  abiExporter: {
-    runOnCompile: true,
-    clear: true,
-    flat: true,
-    only: [':Payroll$'],
   },
   contractSizer: {
     runOnCompile: true,
@@ -68,6 +45,7 @@ const config: HardhatUserConfig = {
       default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
       1: '0x0', // on the mainnet the feeCollector could be a multi sig
     },
+    swapRouter: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
   },
   networks: {
     rinkeby: {
