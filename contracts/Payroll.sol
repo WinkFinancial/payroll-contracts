@@ -57,7 +57,7 @@ contract Payroll is Initializable, AccessControl {
     );
 
     /**
-     * Perform the swap and then the payment to the given addresses
+     * Perform the swap, the transfer and finally the payment to the given addresses
      * @param _erc20TokenOrigin ERC20 token address to swap for another
      * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps and payments.
      * You must know the total amount of erc20TokenOrigin to spend on swaps and also to spend on payments.
@@ -73,35 +73,36 @@ contract Payroll is Initializable, AccessControl {
         Swap[] calldata _swaps,
         Payment[] calldata _payments
     ) external onlyRole(PAYER_ROLE) {
-        performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+        if (_swaps.length > 0) {
+            performSwap(
+                _erc20TokenOrigin,
+                _totalAmountToSpend,
+                _deadline,
+                _swaps
+            );
+        }
 
+        transferFromWallet(_payments);
         performMultiPayment(_payments);
 
         // returns the leftover of erc20TokenOrigin if it was not used in payments
         returnLeftover(_erc20TokenOrigin);
     }
 
-    /**
-     * Perform the token transfer and then the payment to the given addresses
-     * @param _payments The array of the Payment data
-     * @notice Currently the function only works with ERC20 tokens
-     */
-    function performTransferAndPayment(Payment[] calldata _payments)
-        external
-        onlyRole(PAYER_ROLE)
-    {
-        // transfer the totalAmountToPay for each token from the msg.sender to this contract
+    function transferFromWallet(Payment[] calldata _payments) internal {
+        // transfer the totalAmountToPay minus the current balance of the contract
+        // for each token from the msg.sender to this contract
         // msg.sender must approve this contract for each token
         for (uint256 i = 0; i < _payments.length; i++) {
+            IERC20Basic erc20token = IERC20Basic(_payments[i].token);
+            uint256 currentBalance = erc20token.balanceOf(address(this));
             TransferHelper.safeTransferFrom(
                 _payments[i].token,
                 msg.sender,
                 address(this),
-                _payments[i].totalAmountToPay
+                _payments[i].totalAmountToPay - currentBalance
             );
         }
-
-        performMultiPayment(_payments);
     }
 
     /**
