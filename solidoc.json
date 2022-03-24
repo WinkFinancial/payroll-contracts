@@ -1,0 +1,9 @@
+{
+    "pathToRoot": "./",
+    "outputPath": "./docs",
+    "noCompilation": false,
+    "compiler": "npx hardhat compile",
+    "language": "en",
+    "version": "0.1.10",
+    "ignoreFiles": []
+}

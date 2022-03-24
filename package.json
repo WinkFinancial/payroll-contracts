@@ -1,10 +1,19 @@
 {
   "name": "payroll-contracts",
   "scripts": {
-    "lint": "eslint \"**/*.{js,ts}\" && solhint contracts/**/*.sol",
-    "format": "prettier --check \"**/*.{ts,js,sol}\"",
+    "eslint": "eslint \"**/*.{js,ts}\"",
+    "solhint": "solhint contracts/**/*.sol",
+    "lint": "yarn eslint && yarn solhint",
+    "lint:fix": "yarn eslint --fix && yarn solhint --fix",
+    "prettier": "prettier \"**/*.{ts,js,sol}\"",
+    "prettier:check": "yarn prettier --check",
+    "prettier:fix": "yarn prettier --write",
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "flatten": "hardhat flatten",
+    "deploy": "hardhat deploy --network",
+    "docgen": "hardhat docgen"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.12",
@@ -13,15 +22,16 @@
     "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
     "@typechain/ethers-v5": "^8.0.5",
+    "@typechain/hardhat": "^3.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.5",
-    "@typescript-eslint/eslint-plugin": "^5.7.0",
-    "@typescript-eslint/parser": "^5.7.0",
+    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@typescript-eslint/parser": "^5.16.0",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
-    "eslint": "^8.4.1",
-    "eslint-config-prettier": "^8.3.0",
+    "eslint": "^8.11.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-node": "^11.1.0",
@@ -30,11 +40,12 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.2",
     "hardhat": "^2.7.1",
-    "hardhat-abi-exporter": "^2.4.0",
+    "hardhat-abi-exporter": "^2.8.0",
     "hardhat-contract-sizer": "^2.2.0",
     "hardhat-deploy": "^0.9.14",
+    "hardhat-docgen": "^1.1.2",
     "hardhat-gas-reporter": "^1.0.6",
-    "prettier": "^2.5.1",
+    "prettier": "^2.6.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.17",
@@ -43,7 +54,10 @@
     "typechain": "^6.1.0",
     "typescript": "^4.5.4"
   },
+  "engines": {
+    "node": "=16"
+  },
   "dependencies": {
-    "@typechain/hardhat": "^3.1.0"
+    "solhint-plugin-prettier": "^0.0.5"
   }
 }
