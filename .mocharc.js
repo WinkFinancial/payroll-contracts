@@ -12,5 +12,5 @@ module.exports = {
   timeout: 20000,
   ui: 'bdd',
   watch: false,
-  'watch-files': ['contracts/**/*.sol', 'tests/**/*.ts'],  
+  'watch-files': ['contracts/**/*.sol', 'tests/**/*.ts'],
 };

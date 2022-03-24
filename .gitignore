@@ -105,9 +105,13 @@ dist
 
 # Contract artifacts
 artifacts/
+coverage.json
 
 # Cache
 cache/
 
 # Typechain artifacts
 typechain-types/*
+
+# ide
+.vscode
