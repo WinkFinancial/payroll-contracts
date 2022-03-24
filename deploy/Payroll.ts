@@ -1,8 +1,8 @@
-import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { DeployFunction } from 'hardhat-deploy/types'
+import {HardhatRuntimeEnvironment} from 'hardhat/types';
+import {DeployFunction} from 'hardhat-deploy/types';
 
-const version = 'v0.2.0'
-const contractName = 'Payroll'
+const version = 'v0.2.0';
+const contractName = 'Payroll';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
@@ -13,11 +13,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-    const { deployments, getNamedAccounts } = hre
+    const {deployments, getNamedAccounts} = hre;
 
-    const { deploy } = deployments
+    const {deploy} = deployments;
 
-    const { deployer, proxyOwner, swapRouter } = await getNamedAccounts()
+    const {deployer, proxyOwner, swapRouter} = await getNamedAccounts();
 
     await deploy(contractName, {
       contract: contractName,
@@ -31,21 +31,21 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         },
       },
       log: true,
-    })
+    });
 
-    return true
+    return true;
   }
 
   // We recommend this pattern to be able to use async/await everywhere
   // and properly handle errors.
   await main().catch((error) => {
-    console.error(error)
-    process.exitCode = 1
-  })
-}
+    console.error(error);
+    process.exitCode = 1;
+  });
+};
 
-const id = contractName + version
+const id = contractName + version;
 
-export default func
-func.tags = [contractName, version]
-func.id = id
+export default func;
+func.tags = [contractName, version];
+func.id = id;
