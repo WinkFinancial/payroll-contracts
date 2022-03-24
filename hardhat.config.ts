@@ -12,22 +12,45 @@ import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
+import 'hardhat-docgen';
+import 'hardhat-abi-exporter';
 
 dotenv.config();
 
-const privKey = process.env.PRIV_KEY || '';
+let privKey = process.env.PRIV_KEY || '';
 if (!privKey) {
   console.warn('\x1b[31m', 'Must add privKey to env file (No needed for testing only).');
+  privKey = String('').padStart(64, '0');
 }
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   solidity: {
-    compilers: [{version: '0.8.4', settings: {}}],
+    compilers: [
+      {
+        version: '0.8.9',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined && process.env.REPORT_GAS.toLowerCase() === 'true',
     currency: 'USD',
+  },
+  docgen: {
+    path: './docs',
+    clear: true,
+    runOnCompile: true,
+  },
+  abiExporter: {
+    runOnCompile: true,
+    clear: true,
+    flat: true,
+    only: [':Payroll$'],
   },
   contractSizer: {
     runOnCompile: true,
