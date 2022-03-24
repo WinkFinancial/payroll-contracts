@@ -3,7 +3,7 @@
  */
 import * as dotenv from 'dotenv';
 
-import {HardhatUserConfig, task} from 'hardhat/config';
+import {HardhatUserConfig} from 'hardhat/config';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
@@ -15,7 +15,7 @@ import 'hardhat-deploy';
 
 dotenv.config();
 
-let privKey = process.env.PRIV_KEY || '';
+const privKey = process.env.PRIV_KEY || '';
 if (!privKey) {
   console.warn('\x1b[31m', 'Must add privKey to env file (No needed for testing only).');
 }
