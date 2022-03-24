@@ -68,6 +68,10 @@ const config: HardhatUserConfig = {
       default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
       1: '0x0', // on the mainnet the feeCollector could be a multi sig
     },
+    swapRouter: {
+      default: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+      4: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+    },
   },
   networks: {
     rinkeby: {

@@ -13,7 +13,10 @@
     "coverage": "hardhat coverage",
     "flatten": "hardhat flatten",
     "deploy": "hardhat deploy --network",
-    "docgen": "hardhat docgen"
+    "docgen": "hardhat docgen",
+    "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
+    "clean": "rm -rf cache/ artifacts/",
+    "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.12",
@@ -28,6 +31,7 @@
     "@types/node": "^17.0.5",
     "@typescript-eslint/eslint-plugin": "^5.16.0",
     "@typescript-eslint/parser": "^5.16.0",
+    "@uniswap/v3-periphery": "^1.4.0",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
     "eslint": "^8.11.0",
