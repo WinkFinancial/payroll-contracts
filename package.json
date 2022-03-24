@@ -9,7 +9,7 @@
     "prettier:check": "yarn prettier --check",
     "prettier:fix": "yarn prettier --write",
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "test": "TS_NODE_TRANSPILE_ONLY=1 hardhat test",
     "coverage": "hardhat coverage",
     "flatten": "hardhat flatten",
     "deploy": "hardhat deploy --network",
