@@ -58,7 +58,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: process.env.INFURA_API_KEY,
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   namedAccounts: {
     deployer: {
