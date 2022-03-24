@@ -96,12 +96,16 @@ contract Payroll is Initializable, AccessControl {
         for (uint256 i = 0; i < _payments.length; i++) {
             IERC20Basic erc20token = IERC20Basic(_payments[i].token);
             uint256 currentBalance = erc20token.balanceOf(address(this));
-            TransferHelper.safeTransferFrom(
-                _payments[i].token,
-                msg.sender,
-                address(this),
-                _payments[i].totalAmountToPay - currentBalance
-            );
+            int256 amount = int256(_payments[i].totalAmountToPay) -
+                int256(currentBalance);
+            if (amount > 0) {
+                TransferHelper.safeTransferFrom(
+                    _payments[i].token,
+                    msg.sender,
+                    address(this),
+                    uint256(amount)
+                );
+            }
         }
     }
 
