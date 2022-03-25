@@ -109,6 +109,12 @@ describe('Contract: Payroll', () => {
       await payroll.grantRole(await payroll.PAYER_ROLE(), payer.address);
       await tokenB.connect(payer).approve(payroll.address, 1000000);
 
+      await tokenA.transfer(payer.address, 1000000);
+      await tokenA.connect(payer).approve(payroll.address, 1000000);
+
+      await tokenC.transfer(payer.address, 1000000);
+      await tokenC.connect(payer).approve(payroll.address, 1000000);
+
       const timestamp = Date.now() + 1000 * 60 * 60;
       deadline = Math.floor(timestamp / 1000);
     });
@@ -122,34 +128,34 @@ describe('Contract: Payroll', () => {
       const payments: PaymentStruct[] = [
         {
           token: tokenA.address,
-          totalAmountToPay: 100,
+          totalAmountToPay: 200,
           receivers: [userA.address, userB.address],
-          amountsToTransfer: [50, 50],
+          amountsToTransfer: [100, 100],
         },
         {
           token: tokenB.address,
-          totalAmountToPay: 100,
+          totalAmountToPay: 200,
           receivers: [userA.address, userB.address],
-          amountsToTransfer: [50, 50],
+          amountsToTransfer: [100, 100],
         },
         {
           token: tokenC.address,
-          totalAmountToPay: 100,
+          totalAmountToPay: 200,
           receivers: [userA.address, userB.address],
-          amountsToTransfer: [50, 50],
+          amountsToTransfer: [100, 100],
         },
       ];
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, payments);
 
-      expect(await tokenA.balanceOf(userA.address)).to.equal(50);
-      expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+      expect(await tokenA.balanceOf(userA.address)).to.equal(100);
+      expect(await tokenA.balanceOf(userB.address)).to.equal(100);
 
-      expect(await tokenB.balanceOf(userA.address)).to.equal(50);
-      expect(await tokenB.balanceOf(userB.address)).to.equal(50);
+      expect(await tokenB.balanceOf(userA.address)).to.equal(100);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(100);
 
-      expect(await tokenC.balanceOf(userA.address)).to.equal(50);
-      expect(await tokenC.balanceOf(userB.address)).to.equal(50);
+      expect(await tokenC.balanceOf(userA.address)).to.equal(100);
+      expect(await tokenC.balanceOf(userB.address)).to.equal(100);
     });
 
     it('should only swap', async () => {
@@ -179,8 +185,8 @@ describe('Contract: Payroll', () => {
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments);
 
-      expect(await tokenB.balanceOf(userA.address)).to.equal(100);
-      expect(await tokenB.balanceOf(userB.address)).to.equal(100);
+      expect(await tokenB.balanceOf(userA.address)).to.equal(150);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(150);
     });
   });
 });
