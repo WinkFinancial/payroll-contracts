@@ -94,6 +94,31 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "_tokenIn",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "_tokenOut",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_amountReceived",
+        "type": "uint256"
+      }
+    ],
+    "name": "SwapFinished",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "ADMIN_ROLE",
     "outputs": [
@@ -199,6 +224,11 @@
         "internalType": "address",
         "name": "_owner",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_swapRouter",
+        "type": "address"
       }
     ],
     "name": "initialize",
@@ -223,21 +253,75 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_erc20TokenAddress",
+        "name": "_erc20TokenOrigin",
         "type": "address"
       },
       {
-        "internalType": "address[]",
-        "name": "_receivers",
-        "type": "address[]"
+        "internalType": "uint256",
+        "name": "_totalAmountToSpend",
+        "type": "uint256"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_amountsToTransfer",
-        "type": "uint256[]"
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint24",
+            "name": "poolFee",
+            "type": "uint24"
+          }
+        ],
+        "internalType": "struct Payroll.Swap[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalAmountToPay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "receivers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amountsToTransfer",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct Payroll.Payment[]",
+        "name": "_payments",
+        "type": "tuple[]"
       }
     ],
-    "name": "performPayment",
+    "name": "performSwapAndPayment",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -292,6 +376,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swapRouter",
+    "outputs": [
+      {
+        "internalType": "contract ISwapRouter",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
