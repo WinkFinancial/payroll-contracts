@@ -35,26 +35,16 @@ contract Payroll is Initializable, AccessControl {
         uint24 poolFee;
     }
 
-    function initialize(address _owner, address _swapRouter)
-        public
-        initializer
-    {
+    function initialize(address _owner, address _swapRouter) public initializer {
         owner = _owner;
         swapRouter = ISwapRouter(_swapRouter);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(PAYER_ROLE, _owner);
     }
 
-    event BatchPaymentFinished(
-        address[] _receivers,
-        uint256[] _amountsToTransfer
-    );
+    event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
 
-    event SwapFinished(
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _amountReceived
-    );
+    event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
      * Perform the swap, the transfer and finally the payment to the given addresses
@@ -74,12 +64,7 @@ contract Payroll is Initializable, AccessControl {
         Payment[] calldata _payments
     ) external onlyRole(PAYER_ROLE) {
         if (_swaps.length > 0) {
-            performSwap(
-                _erc20TokenOrigin,
-                _totalAmountToSpend,
-                _deadline,
-                _swaps
-            );
+            performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
         }
 
         transferFromWallet(_payments);
@@ -96,14 +81,12 @@ contract Payroll is Initializable, AccessControl {
         for (uint256 i = 0; i < _payments.length; i++) {
             IERC20Basic erc20token = IERC20Basic(_payments[i].token);
             uint256 currentBalance = erc20token.balanceOf(address(this));
-            int256 amount = int256(_payments[i].totalAmountToPay) -
-                int256(currentBalance);
-            if (amount > 0) {
+            if (_payments[i].totalAmountToPay > currentBalance) {
                 TransferHelper.safeTransferFrom(
                     _payments[i].token,
                     msg.sender,
                     address(this),
-                    uint256(amount)
+                    _payments[i].totalAmountToPay - currentBalance
                 );
             }
         }
@@ -125,19 +108,10 @@ contract Payroll is Initializable, AccessControl {
     ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
-        TransferHelper.safeTransferFrom(
-            _erc20TokenOrigin,
-            msg.sender,
-            address(this),
-            _totalAmountToSpend
-        );
+        TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
 
         // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(
-            _erc20TokenOrigin,
-            address(swapRouter),
-            _totalAmountToSpend
-        );
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
         for (uint256 i = 0; i < _swaps.length; i++) {
             swapExactOutputSingle(
@@ -173,17 +147,16 @@ contract Payroll is Initializable, AccessControl {
         uint256 _amountInMax,
         uint32 _deadline
     ) internal returns (uint256 amountIn) {
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
-            .ExactOutputSingleParams({
-                tokenIn: _tokenIn,
-                tokenOut: _tokenOut,
-                fee: _poolFee,
-                recipient: address(this),
-                deadline: _deadline,
-                amountOut: _amountOut,
-                amountInMaximum: _amountInMax,
-                sqrtPriceLimitX96: 0
-            });
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
+            tokenIn: _tokenIn,
+            tokenOut: _tokenOut,
+            fee: _poolFee,
+            recipient: address(this),
+            deadline: _deadline,
+            amountOut: _amountOut,
+            amountInMaximum: _amountInMax,
+            sqrtPriceLimitX96: 0
+        });
 
         // return the amount spend of tokenIn
         amountIn = swapRouter.exactOutputSingle(params);
@@ -197,11 +170,7 @@ contract Payroll is Initializable, AccessControl {
      */
     function performMultiPayment(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
-            performPayment(
-                _payments[i].token,
-                _payments[i].receivers,
-                _payments[i].amountsToTransfer
-            );
+            performPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
 
             // return the leftover for each token after perform all payments
             returnLeftover(_payments[i].token);
@@ -220,26 +189,16 @@ contract Payroll is Initializable, AccessControl {
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
     ) internal {
-        require(
-            _amountsToTransfer.length == _receivers.length,
-            "Both arrays must have the same length"
-        );
+        require(_amountsToTransfer.length == _receivers.length, "Both arrays must have the same length");
 
         address currentReceiver;
         uint256 currentAmount;
 
         for (uint256 i = 0; i < _receivers.length; i++) {
             currentReceiver = _receivers[i];
-            require(
-                _receivers[i] != address(0),
-                "ERC20: cannot register a 0 address"
-            );
+            require(_receivers[i] != address(0), "ERC20: cannot register a 0 address");
             currentAmount = _amountsToTransfer[i];
-            TransferHelper.safeTransfer(
-                _erc20TokenAddress,
-                currentReceiver,
-                currentAmount
-            );
+            TransferHelper.safeTransfer(_erc20TokenAddress, currentReceiver, currentAmount);
         }
         emit BatchPaymentFinished(_receivers, _amountsToTransfer);
     }
@@ -254,11 +213,7 @@ contract Payroll is Initializable, AccessControl {
         uint256 accountBalance = erc20token.balanceOf(address(this));
 
         if (accountBalance > 0) {
-            TransferHelper.safeTransfer(
-                _erc20TokenAddress,
-                msg.sender,
-                accountBalance
-            );
+            TransferHelper.safeTransfer(_erc20TokenAddress, msg.sender, accountBalance);
         }
     }
 }
