@@ -1,8 +1,8 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 import {expect} from 'chai';
-import {encodePriceSqrt} from './shared/encodePriceSqrt';
-import {getMaxTick, getMinTick} from './shared/ticks';
+import {encodePriceSqrt} from './helpers/encodePriceSqrt';
+import {getMaxTick, getMinTick} from './helpers/ticks';
 
 import {
   abi as FACTORY_ABI,
