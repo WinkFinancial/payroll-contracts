@@ -9,13 +9,14 @@
     "prettier:check": "yarn prettier --check",
     "prettier:fix": "yarn prettier --write",
     "compile": "hardhat compile",
-    "test": "TS_NODE_TRANSPILE_ONLY=1 hardhat test",
+    "test": "hardhat test",
+    "typechain": "TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "coverage": "hardhat coverage",
     "flatten": "hardhat flatten",
     "deploy": "hardhat deploy --network",
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
-    "clean": "rm -rf cache/ artifacts/",
+    "clean": "hardhat clean",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network"
   },
   "devDependencies": {

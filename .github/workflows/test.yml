@@ -22,6 +22,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # Generate Typechain artifacts
+      - name: Run Typechain
+        run: yarn typechain
+
       # Solhint and Prettier must be in `package.json`
       - name: Run Solhint
         run: yarn lint
