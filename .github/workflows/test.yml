@@ -8,9 +8,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./packages/library
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -24,12 +22,16 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # Solhint and Prettier must be in `package.json`
-      #- name: Run Solhint
-      #  run: yarn lint
+      # Generate Typechain artifacts
+      - name: Run Typechain
+        run: yarn typechain
 
-      #- name: Run Prettier
-      #  run: yarn prettier:check
+      # Solhint and Prettier must be in `package.json`
+      - name: Run Solhint
+        run: yarn lint
+
+      - name: Run Prettier
+        run: yarn prettier:check
 
       - name: Run Unit test
         run: yarn test

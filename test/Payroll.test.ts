@@ -19,11 +19,6 @@ import {
   bytecode as NFT_MANAGER_BYTECODE,
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 
-import {
-  abi as PAYROLL_ABI,
-  bytecode as PAYROLL_BYTECODE,
-} from '../artifacts/contracts/test/PayrollTest.sol/PayrollTest.json';
-
 import {Token, Pool, Payroll} from '../typechain-types';
 import {PaymentStruct, SwapStruct} from '../typechain-types/Payroll';
 
@@ -71,7 +66,7 @@ describe('Contract: Payroll', () => {
     const Router = new ethers.ContractFactory(ROUTER_ABI, ROUTER_BYTECODE, admin);
     const router = await Router.deploy(factory.address, token.address);
 
-    const Payroll = new ethers.ContractFactory(PAYROLL_ABI, PAYROLL_BYTECODE, admin);
+    const Payroll = await ethers.getContractFactory('PayrollTest');
     payroll = (await Payroll.deploy(admin.address, router.address)) as Payroll;
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
