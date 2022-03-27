@@ -66,8 +66,9 @@ describe('Contract: Payroll', () => {
     const Router = new ethers.ContractFactory(ROUTER_ABI, ROUTER_BYTECODE, admin);
     const router = await Router.deploy(factory.address, token.address);
 
-    const Payroll = await ethers.getContractFactory('PayrollTest');
-    payroll = (await Payroll.deploy(admin.address, router.address)) as Payroll;
+    const Payroll = await ethers.getContractFactory('Payroll');
+    payroll = (await Payroll.deploy()) as Payroll;
+    await payroll.initialize(admin.address, router.address);
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
