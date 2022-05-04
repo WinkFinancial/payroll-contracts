@@ -17,7 +17,8 @@
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
     "clean": "hardhat clean",
-    "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network"
+    "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
+    "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.12",

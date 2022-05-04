@@ -14,14 +14,9 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-docgen';
 import 'hardhat-abi-exporter';
+import networks from './hardhat.network';
 
 dotenv.config();
-
-let privKey = process.env.PRIV_KEY || '';
-if (!privKey) {
-  console.warn('\x1b[31m', 'Must add privKey to env file (No needed for testing only).');
-  privKey = String('').padStart(64, '0');
-}
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -66,24 +61,14 @@ const config: HardhatUserConfig = {
     },
     proxyOwner: {
       default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
-      1: '0x0', // on the mainnet the feeCollector could be a multi sig
+      // 1: '0x0', // on the mainnet the feeCollector could be a multi sig
     },
     swapRouter: {
       default: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       4: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
     },
   },
-  networks: {
-    rinkeby: {
-      live: true,
-      url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
-      blockGasLimit: 8000000,
-      chainId: 4,
-      hardfork: 'istanbul',
-      accounts: [privKey],
-      tags: ['staging'],
-    },
-  },
+  networks,
 };
 
 export default config;
