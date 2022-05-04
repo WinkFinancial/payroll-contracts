@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IERC20Basic.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -12,10 +13,8 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @title A contract that allows multiple payments in one transaction
  * @author Lucas Marc
  */
-contract Payroll is Initializable {
+contract Payroll is Ownable, Initializable {
     ISwapRouter public swapRouter;
-
-    address public owner;
 
     struct Payment {
         address token;
@@ -31,8 +30,7 @@ contract Payroll is Initializable {
         uint24 poolFee;
     }
 
-    function initialize(address _owner, address _swapRouter) public initializer {
-        owner = _owner;
+    function initialize(address _swapRouter) public initializer {
         swapRouter = ISwapRouter(_swapRouter);
     }
 
