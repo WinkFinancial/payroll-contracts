@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/IERC20Basic.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
@@ -13,10 +12,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @title A contract that allows multiple payments in one transaction
  * @author Lucas Marc
  */
-contract Payroll is Initializable, AccessControl {
-    bytes32 public constant PAYER_ROLE = keccak256("PAYER_ROLE");
-    bytes32 public constant ADMIN_ROLE = 0x00;
-
+contract Payroll is Initializable {
     ISwapRouter public swapRouter;
 
     address public owner;
@@ -38,8 +34,6 @@ contract Payroll is Initializable, AccessControl {
     function initialize(address _owner, address _swapRouter) public initializer {
         owner = _owner;
         swapRouter = ISwapRouter(_swapRouter);
-        _setupRole(ADMIN_ROLE, _owner);
-        _setupRole(PAYER_ROLE, _owner);
     }
 
     event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
@@ -62,7 +56,7 @@ contract Payroll is Initializable, AccessControl {
         uint32 _deadline,
         Swap[] calldata _swaps,
         Payment[] calldata _payments
-    ) external onlyRole(PAYER_ROLE) {
+    ) external {
         if (_swaps.length > 0) {
             performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
         }
