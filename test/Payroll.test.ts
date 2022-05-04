@@ -102,7 +102,6 @@ describe('Contract: Payroll', () => {
 
     beforeEach(async () => {
       await tokenB.transfer(payer.address, 1000000);
-      await payroll.grantRole(await payroll.PAYER_ROLE(), payer.address);
       await tokenB.connect(payer).approve(payroll.address, 1000000);
 
       await tokenA.transfer(payer.address, 1000000);
