@@ -94,8 +94,7 @@ contract Payroll is Ownable, Initializable {
      */
     function transferFromWallet(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
-            IERC20Basic erc20token = IERC20Basic(_payments[i].token);
-            uint256 currentBalance = erc20token.balanceOf(address(this));
+            uint256 currentBalance = IERC20Basic(_payments[i].token).balanceOf(address(this));
             if (_payments[i].totalAmountToPay > currentBalance) {
                 TransferHelper.safeTransferFrom(
                     _payments[i].token,
@@ -201,16 +200,14 @@ contract Payroll is Ownable, Initializable {
         path[0] = _tokenIn;
         path[1] = _tokenOut;
 
-        uint256[] memory amounts = swapRouterV2.swapTokensForExactTokens(
+        // return the amount spend of tokenIn
+        amountIn = swapRouterV2.swapTokensForExactTokens(
             _amountOut,
             _amountInMax,
             path,
             address(this),
             _deadline
-        );
-
-        // return the amount spend of tokenIn
-        amountIn = amounts[0];
+        )[0];
 
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
@@ -276,16 +273,11 @@ contract Payroll is Ownable, Initializable {
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
     ) internal {
-        require(_amountsToTransfer.length == _receivers.length, "Both arrays must have the same length");
-
-        address currentReceiver;
-        uint256 currentAmount;
+        require(_amountsToTransfer.length == _receivers.length, "Arrays must have same length");
 
         for (uint256 i = 0; i < _receivers.length; i++) {
-            currentReceiver = _receivers[i];
-            require(_receivers[i] != address(0), "ERC20: cannot register a 0 address");
-            currentAmount = _amountsToTransfer[i];
-            TransferHelper.safeTransfer(_erc20TokenAddress, currentReceiver, currentAmount);
+            require(_receivers[i] != address(0), "Cannot send to a 0 address");
+            TransferHelper.safeTransfer(_erc20TokenAddress, _receivers[i], _amountsToTransfer[i]);
         }
         emit BatchPaymentFinished(_receivers, _amountsToTransfer);
     }
@@ -296,8 +288,7 @@ contract Payroll is Ownable, Initializable {
      * @notice Currently the function only works with only one ERC20 token
      */
     function returnLeftover(address _erc20TokenAddress) internal {
-        IERC20Basic erc20token = IERC20Basic(_erc20TokenAddress);
-        uint256 accountBalance = erc20token.balanceOf(address(this));
+        uint256 accountBalance = IERC20Basic(_erc20TokenAddress).balanceOf(address(this));
 
         if (accountBalance > 0) {
             TransferHelper.safeTransfer(_erc20TokenAddress, msg.sender, accountBalance);
