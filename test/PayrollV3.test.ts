@@ -32,7 +32,7 @@ let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
 
-describe('Contract: Payroll', () => {
+describe('Contract: Payroll V3', () => {
   before(async () => {
     [admin, payer, userA, userB] = await ethers.getSigners();
 
