@@ -68,7 +68,7 @@ describe('Contract: Payroll', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(admin.address, router.address);
+    await payroll.initialize(router.address, false);
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));

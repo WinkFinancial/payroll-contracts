@@ -6,6 +6,7 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IERC20Basic.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
@@ -14,7 +15,9 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @author Lucas Marc
  */
 contract Payroll is Ownable, Initializable {
-    ISwapRouter public swapRouter;
+    IUniswapV2Router02 public swapRouterV2;
+    ISwapRouter public swapRouterV3;
+    bool public isSwapV2;
 
     struct Payment {
         address token;
@@ -30,8 +33,24 @@ contract Payroll is Ownable, Initializable {
         uint24 poolFee;
     }
 
-    function initialize(address _swapRouter) public initializer {
-        swapRouter = ISwapRouter(_swapRouter);
+    function initialize(address _swapRouter, bool _isSwapV2) public initializer {
+        setSwapRouter(_swapRouter, _isSwapV2);
+    }
+
+    /**
+     * Set the SwapRouter and the version to be used
+     * @param _swapRouter Router address to execute swaps
+     * @param _isSwapV2 True indicates that v2 of the UniSwap protocol will be used, 
+     * false indicates that v3 will be used
+     */
+    function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
+        isSwapV2 = _isSwapV2;
+
+        if (_isSwapV2) {
+            swapRouterV2 = IUniswapV2Router02(_swapRouter);
+        } else {
+            swapRouterV3 = ISwapRouter(_swapRouter);
+        }
     }
 
     event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
@@ -66,10 +85,14 @@ contract Payroll is Ownable, Initializable {
         returnLeftover(_erc20TokenOrigin);
     }
 
+    /**
+     * Transfer the totalAmountToPay minus the current balance of the contract
+     * for each token from the msg.sender to this contract
+     * msg.sender must approve this contract for each token
+     * @param _payments The array of the Payment data
+     * @notice Currently the function only works with ERC20 tokens
+     */
     function transferFromWallet(Payment[] calldata _payments) internal {
-        // transfer the totalAmountToPay minus the current balance of the contract
-        // for each token from the msg.sender to this contract
-        // msg.sender must approve this contract for each token
         for (uint256 i = 0; i < _payments.length; i++) {
             IERC20Basic erc20token = IERC20Basic(_payments[i].token);
             uint256 currentBalance = erc20token.balanceOf(address(this));
@@ -102,8 +125,44 @@ contract Payroll is Ownable, Initializable {
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
 
+        if (isSwapV2) {
+            swapV2(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+        } else {
+            swapV3(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+        }
+    }
+
+    function swapV2(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSpend,
+        uint32 _deadline,
+        Swap[] calldata _swaps
+    ) internal {
         // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), _totalAmountToSpend);
+
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            swapTokensForExactTokens(
+                _erc20TokenOrigin,
+                _swaps[i].token,
+                _swaps[i].amountOut,
+                _swaps[i].amountInMax,
+                _deadline
+            );
+        }
+
+        // removes the approval to swapRouter
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), 0);
+    }
+
+    function swapV3(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSpend,
+        uint32 _deadline,
+        Swap[] calldata _swaps
+    ) internal {
+        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), _totalAmountToSpend);
 
         for (uint256 i = 0; i < _swaps.length; i++) {
             swapExactOutputSingle(
@@ -117,11 +176,47 @@ contract Payroll is Ownable, Initializable {
         }
 
         // removes the approval to swapRouter
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), 0);
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), 0);
     }
 
     /**
-     * Perform ERC20 tokens swap
+     * Perform ERC20 tokens swap using UniSwap v2 protocol
+     * @param _tokenIn ERC20 token address to swap for another
+     * @param _tokenOut ERC20 token address to receive
+     * @param _amountOut Exact amount of tokenOut to receive
+     * @param _amountInMax Max amount of tokenIn to pay
+     * @param _deadline The unix timestamp after a swap will fail
+     * @notice Currently the function only works with ERC20 tokens
+     * @notice Currently the function only works with single pools tokenIn/tokenOut
+     */
+    function swapTokensForExactTokens(
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _amountOut,
+        uint256 _amountInMax,
+        uint32 _deadline
+    ) internal returns (uint256 amountIn) {
+
+        address[] memory path = new address[](2);
+        path[0] = _tokenIn;
+        path[1] = _tokenOut;
+
+        uint256[] memory amounts = swapRouterV2.swapTokensForExactTokens(
+            _amountOut,
+            _amountInMax,
+            path,
+            address(this),
+            _deadline
+        );
+
+        // return the amount spend of tokenIn
+        amountIn = amounts[0];
+
+        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+    }
+
+    /**
+     * Perform ERC20 tokens swap using UniSwap v3 protocol
      * @param _tokenIn ERC20 token address to swap for another
      * @param _tokenOut ERC20 token address to receive
      * @param _poolFee Pool fee tokenIn/tokenOut
@@ -151,7 +246,7 @@ contract Payroll is Ownable, Initializable {
         });
 
         // return the amount spend of tokenIn
-        amountIn = swapRouter.exactOutputSingle(params);
+        amountIn = swapRouterV3.exactOutputSingle(params);
 
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
