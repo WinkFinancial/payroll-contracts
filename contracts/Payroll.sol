@@ -93,8 +93,9 @@ contract Payroll is Ownable, Initializable {
      * @notice Currently the function only works with ERC20 tokens
      */
     function transferFromWallet(Payment[] calldata _payments) internal {
+        uint256 currentBalance;
         for (uint256 i = 0; i < _payments.length; i++) {
-            uint256 currentBalance = IERC20Basic(_payments[i].token).balanceOf(address(this));
+            currentBalance = IERC20Basic(_payments[i].token).balanceOf(address(this));
             if (_payments[i].totalAmountToPay > currentBalance) {
                 TransferHelper.safeTransferFrom(
                     _payments[i].token,
@@ -125,57 +126,39 @@ contract Payroll is Ownable, Initializable {
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
 
         if (isSwapV2) {
-            swapV2(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+            // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), _totalAmountToSpend);
+
+            for (uint256 i = 0; i < _swaps.length; i++) {
+                swapTokensForExactTokens(
+                    _erc20TokenOrigin,
+                    _swaps[i].token,
+                    _swaps[i].amountOut,
+                    _swaps[i].amountInMax,
+                    _deadline
+                );
+            }
+
+            // removes the approval to swapRouter
+            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), 0);
         } else {
-            swapV3(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+            // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), _totalAmountToSpend);
+
+            for (uint256 i = 0; i < _swaps.length; i++) {
+                swapExactOutputSingle(
+                    _erc20TokenOrigin,
+                    _swaps[i].token,
+                    _swaps[i].poolFee,
+                    _swaps[i].amountOut,
+                    _swaps[i].amountInMax,
+                    _deadline
+                );
+            }
+
+            // removes the approval to swapRouter
+            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), 0);
         }
-    }
-
-    function swapV2(
-        address _erc20TokenOrigin,
-        uint256 _totalAmountToSpend,
-        uint32 _deadline,
-        Swap[] calldata _swaps
-    ) internal {
-        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), _totalAmountToSpend);
-
-        for (uint256 i = 0; i < _swaps.length; i++) {
-            swapTokensForExactTokens(
-                _erc20TokenOrigin,
-                _swaps[i].token,
-                _swaps[i].amountOut,
-                _swaps[i].amountInMax,
-                _deadline
-            );
-        }
-
-        // removes the approval to swapRouter
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), 0);
-    }
-
-    function swapV3(
-        address _erc20TokenOrigin,
-        uint256 _totalAmountToSpend,
-        uint32 _deadline,
-        Swap[] calldata _swaps
-    ) internal {
-        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), _totalAmountToSpend);
-
-        for (uint256 i = 0; i < _swaps.length; i++) {
-            swapExactOutputSingle(
-                _erc20TokenOrigin,
-                _swaps[i].token,
-                _swaps[i].poolFee,
-                _swaps[i].amountOut,
-                _swaps[i].amountInMax,
-                _deadline
-            );
-        }
-
-        // removes the approval to swapRouter
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), 0);
     }
 
     /**
@@ -194,14 +177,13 @@ contract Payroll is Ownable, Initializable {
         uint256 _amountOut,
         uint256 _amountInMax,
         uint32 _deadline
-    ) internal returns (uint256 amountIn) {
-
+    ) internal {
         address[] memory path = new address[](2);
         path[0] = _tokenIn;
         path[1] = _tokenOut;
 
         // return the amount spend of tokenIn
-        amountIn = swapRouterV2.swapTokensForExactTokens(
+        uint256 amountIn = swapRouterV2.swapTokensForExactTokens(
             _amountOut,
             _amountInMax,
             path,
@@ -230,7 +212,7 @@ contract Payroll is Ownable, Initializable {
         uint256 _amountOut,
         uint256 _amountInMax,
         uint32 _deadline
-    ) internal returns (uint256 amountIn) {
+    ) internal {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
@@ -243,7 +225,7 @@ contract Payroll is Ownable, Initializable {
         });
 
         // return the amount spend of tokenIn
-        amountIn = swapRouterV3.exactOutputSingle(params);
+        uint256 amountIn = swapRouterV3.exactOutputSingle(params);
 
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
