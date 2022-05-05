@@ -6,8 +6,7 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IERC20Basic.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "./interfaces/IUniswapBasic.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 /**
@@ -15,8 +14,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @author Lucas Marc
  */
 contract Payroll is Ownable, Initializable {
-    IUniswapV2Router02 public swapRouterV2;
-    ISwapRouter public swapRouterV3;
+    IUniswapBasic public swapRouter;
     bool public isSwapV2;
 
     struct Payment {
@@ -40,22 +38,15 @@ contract Payroll is Ownable, Initializable {
     /**
      * Set the SwapRouter and the version to be used
      * @param _swapRouter Router address to execute swaps
-     * @param _isSwapV2 True indicates that v2 of the UniSwap protocol will be used, 
-     * false indicates that v3 will be used
      */
     function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
         isSwapV2 = _isSwapV2;
-
-        if (_isSwapV2) {
-            swapRouterV2 = IUniswapV2Router02(_swapRouter);
-        } else {
-            swapRouterV3 = ISwapRouter(_swapRouter);
-        }
+        swapRouter = IUniswapBasic(_swapRouter);
     }
 
-    event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
+    // event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
 
-    event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
+    // event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
      * Perform the swap, the transfer and finally the payment to the given addresses
@@ -125,10 +116,10 @@ contract Payroll is Ownable, Initializable {
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
 
-        if (isSwapV2) {
-            // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), _totalAmountToSpend);
+        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
+        if (isSwapV2) {
             for (uint256 i = 0; i < _swaps.length; i++) {
                 swapTokensForExactTokens(
                     _erc20TokenOrigin,
@@ -138,13 +129,7 @@ contract Payroll is Ownable, Initializable {
                     _deadline
                 );
             }
-
-            // removes the approval to swapRouter
-            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV2), 0);
         } else {
-            // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), _totalAmountToSpend);
-
             for (uint256 i = 0; i < _swaps.length; i++) {
                 swapExactOutputSingle(
                     _erc20TokenOrigin,
@@ -155,10 +140,10 @@ contract Payroll is Ownable, Initializable {
                     _deadline
                 );
             }
-
-            // removes the approval to swapRouter
-            TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouterV3), 0);
         }
+
+        // removes the approval to swapRouter
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), 0);
     }
 
     /**
@@ -183,15 +168,15 @@ contract Payroll is Ownable, Initializable {
         path[1] = _tokenOut;
 
         // return the amount spend of tokenIn
-        uint256 amountIn = swapRouterV2.swapTokensForExactTokens(
+        swapRouter.swapTokensForExactTokens(
             _amountOut,
             _amountInMax,
             path,
             address(this),
             _deadline
-        )[0];
+        );
 
-        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+        //emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
 
     /**
@@ -213,21 +198,22 @@ contract Payroll is Ownable, Initializable {
         uint256 _amountInMax,
         uint32 _deadline
     ) internal {
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
-            tokenIn: _tokenIn,
-            tokenOut: _tokenOut,
-            fee: _poolFee,
-            recipient: address(this),
-            deadline: _deadline,
-            amountOut: _amountOut,
-            amountInMaximum: _amountInMax,
-            sqrtPriceLimitX96: 0
-        });
 
         // return the amount spend of tokenIn
-        uint256 amountIn = swapRouterV3.exactOutputSingle(params);
+        swapRouter.exactOutputSingle(
+            IUniswapBasic.ExactOutputSingleParams({
+                tokenIn: _tokenIn,
+                tokenOut: _tokenOut,
+                fee: _poolFee,
+                recipient: address(this),
+                deadline: _deadline,
+                amountOut: _amountOut,
+                amountInMaximum: _amountInMax,
+                sqrtPriceLimitX96: 0
+            })
+        );
 
-        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+        //emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
 
     /**
@@ -261,7 +247,7 @@ contract Payroll is Ownable, Initializable {
             require(_receivers[i] != address(0), "Cannot send to a 0 address");
             TransferHelper.safeTransfer(_erc20TokenAddress, _receivers[i], _amountsToTransfer[i]);
         }
-        emit BatchPaymentFinished(_receivers, _amountsToTransfer);
+        //emit BatchPaymentFinished(_receivers, _amountsToTransfer);
     }
 
     /**

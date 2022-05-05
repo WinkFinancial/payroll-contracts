@@ -3,25 +3,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "_receivers",
-        "type": "address[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256[]",
-        "name": "_amountsToTransfer",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "BatchPaymentFinished",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -35,31 +16,6 @@
       }
     ],
     "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "_tokenIn",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "_tokenOut",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "_amountReceived",
-        "type": "uint256"
-      }
-    ],
-    "name": "SwapFinished",
     "type": "event"
   },
   {
@@ -210,23 +166,10 @@
   },
   {
     "inputs": [],
-    "name": "swapRouterV2",
+    "name": "swapRouter",
     "outputs": [
       {
-        "internalType": "contract IUniswapV2Router02",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "swapRouterV3",
-    "outputs": [
-      {
-        "internalType": "contract ISwapRouter",
+        "internalType": "contract IUniswapBasic",
         "name": "",
         "type": "address"
       }
