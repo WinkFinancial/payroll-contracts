@@ -8,12 +8,12 @@ pragma solidity ^0.8.0;
  */
 interface IUniswapBasic {
     function swapTokensForExactTokens(
-        uint amountOut,
-        uint amountInMax,
+        uint256 amountOut,
+        uint256 amountInMax,
         address[] calldata path,
         address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
 
     struct ExactOutputSingleParams {
         address tokenIn;

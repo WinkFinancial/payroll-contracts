@@ -199,7 +199,6 @@ contract Payroll is Ownable, Initializable {
         uint256 _amountInMax,
         uint32 _deadline
     ) internal {
-
         // return the amount spend of tokenIn
         uint256 amountIn = swapRouter.exactOutputSingle(
             IUniswapBasic.ExactOutputSingleParams({
