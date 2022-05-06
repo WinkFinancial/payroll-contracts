@@ -45,9 +45,9 @@ contract Payroll is Ownable, Initializable {
         swapRouter = IUniswapBasic(_swapRouter);
     }
 
-    // event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
+    event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
 
-    // event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
+    event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
      * Perform the swap, the transfer and finally the payment to the given addresses
@@ -169,15 +169,15 @@ contract Payroll is Ownable, Initializable {
         path[1] = _tokenOut;
 
         // return the amount spend of tokenIn
-        swapRouter.swapTokensForExactTokens(
+        uint256 amountIn = swapRouter.swapTokensForExactTokens(
             _amountOut,
             _amountInMax,
             path,
             address(this),
             _deadline
-        );
+        )[0];
 
-        //emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
 
     /**
@@ -201,7 +201,7 @@ contract Payroll is Ownable, Initializable {
     ) internal {
 
         // return the amount spend of tokenIn
-        swapRouter.exactOutputSingle(
+        uint256 amountIn = swapRouter.exactOutputSingle(
             IUniswapBasic.ExactOutputSingleParams({
                 tokenIn: _tokenIn,
                 tokenOut: _tokenOut,
@@ -214,7 +214,7 @@ contract Payroll is Ownable, Initializable {
             })
         );
 
-        //emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
 
     /**
@@ -248,7 +248,7 @@ contract Payroll is Ownable, Initializable {
             require(_receivers[i] != address(0), "Cannot send to a 0 address");
             TransferHelper.safeTransfer(_erc20TokenAddress, _receivers[i], _amountsToTransfer[i]);
         }
-        //emit BatchPaymentFinished(_receivers, _amountsToTransfer);
+        emit BatchPaymentFinished(_receivers, _amountsToTransfer);
     }
 
     /**

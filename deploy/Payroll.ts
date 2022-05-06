@@ -33,6 +33,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           args: [swapRouter, isSwapV2],
         },
       },
+      gasLimit: 4000000,
       log: true,
     });
 
