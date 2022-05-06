@@ -32,7 +32,8 @@ contract Payroll is Ownable, Initializable {
     }
 
     function initialize(address _swapRouter, bool _isSwapV2) public initializer {
-        setSwapRouter(_swapRouter, _isSwapV2);
+        isSwapV2 = _isSwapV2;
+        swapRouter = IUniswapBasic(_swapRouter);
     }
 
     /**

@@ -4,6 +4,8 @@ import {DeployFunction} from 'hardhat-deploy/types';
 const version = 'v0.2.0';
 const contractName = 'Payroll';
 
+const UNISWAP_V2_CHAINS = [56, 97];
+
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
     // Hardhat always runs the compile task when running scripts with its command
@@ -14,20 +16,21 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // await hre.run('compile');
 
     const {deployments, getNamedAccounts} = hre;
+    const chainId = hre.network.config.chainId || 0;
 
     const {deploy} = deployments;
 
-    const {deployer, proxyOwner, swapRouter} = await getNamedAccounts();
+    const {deployer, swapRouter} = await getNamedAccounts();
+
+    const isSwapV2 = UNISWAP_V2_CHAINS.indexOf(chainId) === -1 ? false : true;
 
     await deploy(contractName, {
-      contract: contractName,
       from: deployer,
       proxy: {
-        owner: proxyOwner,
         proxyContract: 'OpenZeppelinTransparentProxy',
         execute: {
           methodName: 'initialize',
-          args: [deployer, swapRouter],
+          args: [swapRouter, isSwapV2],
         },
       },
       log: true,

@@ -69,6 +69,7 @@ if (mnemonic) {
 if (infuraApiKey && mnemonic) {
   networks.kovan = {
     url: `https://kovan.infura.io/v3/${infuraApiKey}`,
+    chainId: 42,
     accounts: {
       mnemonic,
     },
@@ -76,6 +77,7 @@ if (infuraApiKey && mnemonic) {
 
   networks.ropsten = {
     url: `https://ropsten.infura.io/v3/${infuraApiKey}`,
+    chainId: 3,
     accounts: {
       mnemonic,
     },
