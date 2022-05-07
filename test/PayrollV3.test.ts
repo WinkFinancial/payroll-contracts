@@ -3,6 +3,7 @@ import {ethers} from 'hardhat';
 import {expect} from 'chai';
 import {encodePriceSqrt} from './helpers/encodePriceSqrt';
 import {getMaxTick, getMinTick} from './helpers/ticks';
+import {Contract} from 'ethers';
 
 import {
   abi as FACTORY_ABI,
@@ -22,6 +23,7 @@ import {
 import {Token, Pool, Payroll} from '../typechain-types';
 import {PaymentStruct, SwapStruct} from '../typechain-types/Payroll';
 
+let router: Contract;
 let tokenA: Token;
 let tokenB: Token;
 let tokenC: Token;
@@ -64,7 +66,7 @@ describe('Contract: Payroll V3', () => {
     pool = (await Pool.deploy(factory.address, nft_manager.address)) as Pool;
 
     const Router = new ethers.ContractFactory(ROUTER_ABI, ROUTER_BYTECODE, admin);
-    const router = await Router.deploy(factory.address, token.address);
+    router = await Router.deploy(factory.address, token.address);
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
@@ -183,5 +185,11 @@ describe('Contract: Payroll V3', () => {
       expect(await tokenB.balanceOf(userA.address)).to.equal(150);
       expect(await tokenB.balanceOf(userB.address)).to.equal(150);
     });
+
+
+    it('should update swapRouter', async () => {
+      await payroll.setSwapRouter(router.address, true);
+      expect(await payroll.isSwapV2()).to.be.true;
+    })
   });
 });
