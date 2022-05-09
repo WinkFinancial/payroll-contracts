@@ -186,10 +186,9 @@ describe('Contract: Payroll V3', () => {
       expect(await tokenB.balanceOf(userB.address)).to.equal(150);
     });
 
-
     it('should update swapRouter', async () => {
       await payroll.setSwapRouter(router.address, true);
       expect(await payroll.isSwapV2()).to.be.true;
-    })
+    });
   });
 });
