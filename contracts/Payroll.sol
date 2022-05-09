@@ -10,11 +10,21 @@ import "./interfaces/IUniswapBasic.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 /**
- * @title A contract that allows multiple payments in one transaction
- * @author Lucas Marc
+ * @title Think and Dev Paymentbox
+ * @author Think and Dev Team
+ * @notice Swap and transfer multiple ERC20 pairs to multiple accounts in a single transaction.
+ * Use any router address of any DEX that uses Uniswap protocol v2 or v3 to make swaps.
  */
 contract Payroll is Ownable, Initializable {
+    /**
+     * Returns the address of the Uniswap protocol router, it could be v2 or v3.
+     */
     IUniswapBasic public swapRouter;
+
+    /**
+     * Returns if the contract is working with a v2 Uniswap protocol;
+     * true means v2, false means v3.
+     */
     bool public isSwapV2;
 
     struct Payment {
@@ -31,16 +41,23 @@ contract Payroll is Ownable, Initializable {
         uint24 poolFee;
     }
 
+    /**
+     * @param _swapRouter Router address to execute swaps.
+     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
+     */
     function initialize(address _swapRouter, bool _isSwapV2) public initializer {
+        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
         swapRouter = IUniswapBasic(_swapRouter);
     }
 
     /**
-     * Set the SwapRouter and the version to be used
-     * @param _swapRouter Router address to execute swaps
+     * Set the SwapRouter and the version to be used.
+     * @param _swapRouter Router address to execute swaps.
+     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
     function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
+        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
         swapRouter = IUniswapBasic(_swapRouter);
     }
@@ -50,14 +67,14 @@ contract Payroll is Ownable, Initializable {
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
-     * Perform the swap, the transfer and finally the payment to the given addresses
-     * @param _erc20TokenOrigin ERC20 token address to swap for another
+     * Perform the swap, the transfer and finally the payment to the given addresses.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps and payments.
      * You must know the total amount of erc20TokenOrigin to spend on swaps and also to spend on payments.
-     * @param _deadline The unix timestamp after a swap will fail
-     * @param _swaps The array of the Swaps data
-     * @param _payments The array of the Payment data
-     * @notice Currently the function only works with ERC20 tokens
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     * @param _payments The array of the Payment data.
+     * @notice Currently the function only works with ERC20 tokens.
      */
     function performSwapAndPayment(
         address _erc20TokenOrigin,
@@ -79,10 +96,9 @@ contract Payroll is Ownable, Initializable {
 
     /**
      * Transfer the totalAmountToPay minus the current balance of the contract
-     * for each token from the msg.sender to this contract
-     * msg.sender must approve this contract for each token
-     * @param _payments The array of the Payment data
-     * @notice Currently the function only works with ERC20 tokens
+     * for each token from the msg.sender to this contract.
+     * msg.sender must approve this contract for each token.
+     * @param _payments The array of the Payment data.
      */
     function transferFromWallet(Payment[] calldata _payments) internal {
         uint256 currentBalance;
@@ -100,12 +116,11 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Perform the swap to the given token addresses and amounts
-     * @param _erc20TokenOrigin ERC20 token address to swap for another
-     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps
-     * @param _deadline The unix timestamp after a swap will fail
-     * @param _swaps The array of the Swaps data
-     * @notice Currently the function only works with ERC20 tokens
+     * Perform the swap to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
      */
     function performSwap(
         address _erc20TokenOrigin,
@@ -120,6 +135,7 @@ contract Payroll is Ownable, Initializable {
         // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
         TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
+        // determines which version of uniswap protocol will be used to perform the swap
         if (isSwapV2) {
             for (uint256 i = 0; i < _swaps.length; i++) {
                 swapTokensForExactTokens(
@@ -148,14 +164,12 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Perform ERC20 tokens swap using UniSwap v2 protocol
-     * @param _tokenIn ERC20 token address to swap for another
-     * @param _tokenOut ERC20 token address to receive
-     * @param _amountOut Exact amount of tokenOut to receive
-     * @param _amountInMax Max amount of tokenIn to pay
-     * @param _deadline The unix timestamp after a swap will fail
-     * @notice Currently the function only works with ERC20 tokens
-     * @notice Currently the function only works with single pools tokenIn/tokenOut
+     * Perform ERC20 tokens swap using UniSwap v2 protocol.
+     * @param _tokenIn ERC20 token address to swap for another.
+     * @param _tokenOut ERC20 token address to receive.
+     * @param _amountOut Exact amount of tokenOut to receive.
+     * @param _amountInMax Max amount of tokenIn to pay.
+     * @param _deadline The unix timestamp after a swap will fail.
      */
     function swapTokensForExactTokens(
         address _tokenIn,
@@ -181,15 +195,14 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Perform ERC20 tokens swap using UniSwap v3 protocol
-     * @param _tokenIn ERC20 token address to swap for another
-     * @param _tokenOut ERC20 token address to receive
-     * @param _poolFee Pool fee tokenIn/tokenOut
-     * @param _amountOut Exact amount of tokenOut to receive
-     * @param _amountInMax Max amount of tokenIn to pay
-     * @param _deadline The unix timestamp after a swap will fail
-     * @notice Currently the function only works with ERC20 tokens
-     * @notice Currently the function only works with single pools tokenIn/tokenOut
+     * Perform ERC20 tokens swap using UniSwap v3 protocol.
+     * @param _tokenIn ERC20 token address to swap for another.
+     * @param _tokenOut ERC20 token address to receive.
+     * @param _poolFee Pool fee tokenIn/tokenOut.
+     * @param _amountOut Exact amount of tokenOut to receive.
+     * @param _amountInMax Max amount of tokenIn to pay.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @notice Currently the function only works with single pools tokenIn/tokenOut.
      */
     function swapExactOutputSingle(
         address _tokenIn,
@@ -217,8 +230,8 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Perform the payments to the given addresses and amounts
-     * @param _payments The array of the Payment data
+     * Perform the payments to the given addresses and amounts.
+     * @param _payments The array of the Payment data.
      */
     function performMultiPayment(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
@@ -230,11 +243,11 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Performs the payment to the given addresses
-     * @param _erc20TokenAddress The address of the ERC20 token to transfer
-     * @param _receivers The array of payment receivers
-     * @param _amountsToTransfer The array of payments' amounts to perform. The amount will be transfered to the address on _receivers with the same index.
-     * @notice Currently the function only works with only one ERC20 token
+     * Performs the payment to the given addresses.
+     * @param _erc20TokenAddress The address of the ERC20 token to transfer.
+     * @param _receivers The array of payment receivers.
+     * @param _amountsToTransfer The array of payments' amounts to perform.
+     * The amount will be transfered to the address on _receivers with the same index.
      */
     function performPayment(
         address _erc20TokenAddress,
@@ -251,9 +264,8 @@ contract Payroll is Ownable, Initializable {
     }
 
     /**
-     * Return all balance of an ERC20 to the msg.sender
-     * @param _erc20TokenAddress The address of the ERC20 token to transfer
-     * @notice Currently the function only works with only one ERC20 token
+     * Return all balance of an ERC20 to the msg.sender.
+     * @param _erc20TokenAddress The address of the ERC20 token to transfer.
      */
     function returnLeftover(address _erc20TokenAddress) internal {
         uint256 accountBalance = IERC20Basic(_erc20TokenAddress).balanceOf(address(this));

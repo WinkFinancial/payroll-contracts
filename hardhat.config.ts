@@ -40,6 +40,7 @@ const config: HardhatUserConfig = {
     path: './docs',
     clear: true,
     runOnCompile: true,
+    except: ['./test'],
   },
   abiExporter: {
     runOnCompile: true,
