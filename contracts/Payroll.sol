@@ -47,58 +47,34 @@ contract Payroll is Ownable, Initializable {
 
     /**
      * @param _swapRouter Router address to execute swaps.
-     * @param _erc20TokenBase ERC20 token address to be used by the swapRouter..
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
     function initialize(
         address _swapRouter,
-        address _erc20TokenBase,
         bool _isSwapV2
     ) public initializer {
-        updateSwapRouter(_swapRouter, _erc20TokenBase, _isSwapV2);
+        updateSwapRouter(_swapRouter, _isSwapV2);
     }
 
     /**
-     * Set the SwapRouter and the version to be used. Also approve an ERC20 token to be used by the swapRouter.
+     * Set the SwapRouter and the version to be used.
      * @param _swapRouter Router address to execute swaps.
-     * @param _erc20TokenBase ERC20 token address to be used by the swapRouter.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
     function setSwapRouter(
         address _swapRouter,
-        address _erc20TokenBase,
         bool _isSwapV2
     ) public onlyOwner {
-        updateSwapRouter(_swapRouter, _erc20TokenBase, _isSwapV2);
+        updateSwapRouter(_swapRouter, _isSwapV2);
     }
 
     function updateSwapRouter(
         address _swapRouter,
-        address _erc20TokenBase,
         bool _isSwapV2
     ) internal {
         require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
         swapRouter = IUniswapBasic(_swapRouter);
-
-        approveERC20(_erc20TokenBase);
-    }
-
-    /**
-     * The contract approve an ERC20 token to be used by the swapRouter.
-     * @param _erc20Token ERC20 token address to be used.
-     */
-    function approveERC20ToSwapRouter(address _erc20Token) public onlyOwner {
-        approveERC20(_erc20Token);
-    }
-
-    function approveERC20(address _erc20Token) internal {
-        // approves the swapRouter to spend an infinite amount of _erc20Token
-        TransferHelper.safeApprove(
-            _erc20Token,
-            address(swapRouter),
-            0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-        );
     }
 
     /**
@@ -140,6 +116,9 @@ contract Payroll is Ownable, Initializable {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
+
+        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
         // determines which version of uniswap protocol will be used to perform the swap
         if (isSwapV2) {

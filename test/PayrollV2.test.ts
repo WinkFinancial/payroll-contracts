@@ -43,7 +43,7 @@ describe('Contract: Payroll V2', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(uniswapV2Router02.address, tokenB.address, true);
+    await payroll.initialize(uniswapV2Router02.address, true);
 
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);

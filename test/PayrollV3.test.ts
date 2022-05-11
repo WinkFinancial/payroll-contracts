@@ -70,7 +70,7 @@ describe('Contract: Payroll V3', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(router.address, tokenB.address, false);
+    await payroll.initialize(router.address, false);
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
@@ -217,20 +217,14 @@ describe('Contract: Payroll V3', () => {
     });
 
     it('should update swapRouter', async () => {
-      await payroll.setSwapRouter(router.address, tokenB.address, true);
+      await payroll.setSwapRouter(router.address, true);
       expect(await payroll.isSwapV2()).to.be.true;
     });
 
     it('should not update swapRouter with a zero address', async () => {
-      expect(payroll.setSwapRouter(ethers.constants.AddressZero, tokenB.address, true)).to.be.revertedWith(
+      expect(payroll.setSwapRouter(ethers.constants.AddressZero, true)).to.be.revertedWith(
         'Cannot set a 0 address as swapRouter'
       );
-    });
-
-    it('should approve another ERC20 to swapRouter', async () => {
-      expect(await tokenA.allowance(payroll.address, router.address)).to.equal('0');
-      await payroll.approveERC20ToSwapRouter(tokenA.address);
-      expect(await tokenA.allowance(payroll.address, router.address)).to.not.equal('0');
     });
   });
 });
