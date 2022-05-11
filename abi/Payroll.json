@@ -66,7 +66,25 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_erc20Token",
+        "type": "address"
+      }
+    ],
+    "name": "approveERC20ToSwapRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_swapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_erc20TokenBase",
         "type": "address"
       },
       {
@@ -195,6 +213,11 @@
       {
         "internalType": "address",
         "name": "_swapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_erc20TokenBase",
         "type": "address"
       },
       {

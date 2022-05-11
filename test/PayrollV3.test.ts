@@ -70,7 +70,7 @@ describe('Contract: Payroll V3', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(router.address, false);
+    await payroll.initialize(router.address, tokenB.address, false);
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
@@ -161,13 +161,13 @@ describe('Contract: Payroll V3', () => {
         {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
       ];
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(0);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(0);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(1999900);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(1999900);
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(100);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(100);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(2000000);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(2000000);
     });
 
     it('should only transfer', async () => {
@@ -186,9 +186,51 @@ describe('Contract: Payroll V3', () => {
       expect(await tokenB.balanceOf(userB.address)).to.equal(150);
     });
 
+    it('should revert because amountsToTransfers and receivers length', async () => {
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenB.address,
+          totalAmountToPay: 100,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50, 50],
+        },
+      ];
+
+      expect(
+        payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+      ).to.be.revertedWith('Arrays must have same length');
+    });
+
+    it('should revert because one receiver is a zero address', async () => {
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenB.address,
+          totalAmountToPay: 100,
+          receivers: [userA.address, ethers.constants.AddressZero],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      expect(
+        payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+      ).to.be.revertedWith('Cannot send to a 0 address');
+    });
+
     it('should update swapRouter', async () => {
-      await payroll.setSwapRouter(router.address, true);
+      await payroll.setSwapRouter(router.address, tokenB.address, true);
       expect(await payroll.isSwapV2()).to.be.true;
+    });
+
+    it('should not update swapRouter with a zero address', async () => {
+      expect(payroll.setSwapRouter(ethers.constants.AddressZero, tokenB.address, true)).to.be.revertedWith(
+        'Cannot set a 0 address as swapRouter'
+      );
+    });
+
+    it('should approve another ERC20 to swapRouter', async () => {
+      expect(await tokenA.allowance(payroll.address, router.address)).to.equal('0');
+      await payroll.approveERC20ToSwapRouter(tokenA.address);
+      expect(await tokenA.allowance(payroll.address, router.address)).to.not.equal('0');
     });
   });
 });

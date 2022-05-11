@@ -41,36 +41,70 @@ contract Payroll is Ownable, Initializable {
         uint24 poolFee;
     }
 
-    /**
-     * @param _swapRouter Router address to execute swaps.
-     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
-     */
-    function initialize(address _swapRouter, bool _isSwapV2) public initializer {
-        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
-        isSwapV2 = _isSwapV2;
-        swapRouter = IUniswapBasic(_swapRouter);
-    }
-
-    /**
-     * Set the SwapRouter and the version to be used.
-     * @param _swapRouter Router address to execute swaps.
-     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
-     */
-    function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
-        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
-        isSwapV2 = _isSwapV2;
-        swapRouter = IUniswapBasic(_swapRouter);
-    }
-
     event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
 
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
-     * Perform the swap, the transfer and finally the payment to the given addresses.
+     * @param _swapRouter Router address to execute swaps.
+     * @param _erc20TokenBase ERC20 token address to be used by the swapRouter..
+     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
+     */
+    function initialize(
+        address _swapRouter,
+        address _erc20TokenBase,
+        bool _isSwapV2
+    ) public initializer {
+        updateSwapRouter(_swapRouter, _erc20TokenBase, _isSwapV2);
+    }
+
+    /**
+     * Set the SwapRouter and the version to be used. Also approve an ERC20 token to be used by the swapRouter.
+     * @param _swapRouter Router address to execute swaps.
+     * @param _erc20TokenBase ERC20 token address to be used by the swapRouter.
+     * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
+     */
+    function setSwapRouter(
+        address _swapRouter,
+        address _erc20TokenBase,
+        bool _isSwapV2
+    ) public onlyOwner {
+        updateSwapRouter(_swapRouter, _erc20TokenBase, _isSwapV2);
+    }
+
+    function updateSwapRouter(
+        address _swapRouter,
+        address _erc20TokenBase,
+        bool _isSwapV2
+    ) internal {
+        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
+        isSwapV2 = _isSwapV2;
+        swapRouter = IUniswapBasic(_swapRouter);
+
+        approveERC20(_erc20TokenBase);
+    }
+
+    /**
+     * The contract approve an ERC20 token to be used by the swapRouter.
+     * @param _erc20Token ERC20 token address to be used.
+     */
+    function approveERC20ToSwapRouter(address _erc20Token) public onlyOwner {
+        approveERC20(_erc20Token);
+    }
+
+    function approveERC20(address _erc20Token) internal {
+        // approves the swapRouter to spend an infinite amount of _erc20Token
+        TransferHelper.safeApprove(
+            _erc20Token,
+            address(swapRouter),
+            0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        );
+    }
+
+    /**
+     * Perform the swap and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
-     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps and payments.
-     * You must know the total amount of erc20TokenOrigin to spend on swaps and also to spend on payments.
+     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
@@ -87,32 +121,7 @@ contract Payroll is Ownable, Initializable {
             performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
         }
 
-        transferFromWallet(_payments);
         performMultiPayment(_payments);
-
-        // returns the leftover of erc20TokenOrigin if it was not used in payments
-        returnLeftover(_erc20TokenOrigin);
-    }
-
-    /**
-     * Transfer the totalAmountToPay minus the current balance of the contract
-     * for each token from the msg.sender to this contract.
-     * msg.sender must approve this contract for each token.
-     * @param _payments The array of the Payment data.
-     */
-    function transferFromWallet(Payment[] calldata _payments) internal {
-        uint256 currentBalance;
-        for (uint256 i = 0; i < _payments.length; i++) {
-            currentBalance = IERC20Basic(_payments[i].token).balanceOf(address(this));
-            if (_payments[i].totalAmountToPay > currentBalance) {
-                TransferHelper.safeTransferFrom(
-                    _payments[i].token,
-                    msg.sender,
-                    address(this),
-                    _payments[i].totalAmountToPay - currentBalance
-                );
-            }
-        }
     }
 
     /**
@@ -131,9 +140,6 @@ contract Payroll is Ownable, Initializable {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
-
-        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
         // determines which version of uniswap protocol will be used to perform the swap
         if (isSwapV2) {
@@ -159,8 +165,12 @@ contract Payroll is Ownable, Initializable {
             }
         }
 
-        // removes the approval to swapRouter
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), 0);
+        // return the leftover of _erc20TokenOrigin
+        TransferHelper.safeTransfer(
+            _erc20TokenOrigin,
+            msg.sender,
+            IERC20Basic(_erc20TokenOrigin).balanceOf(address(this))
+        );
     }
 
     /**
@@ -183,13 +193,9 @@ contract Payroll is Ownable, Initializable {
         path[1] = _tokenOut;
 
         // return the amount spend of tokenIn
-        uint256 amountIn = swapRouter.swapTokensForExactTokens(
-            _amountOut,
-            _amountInMax,
-            path,
-            address(this),
-            _deadline
-        )[0];
+        uint256 amountIn = swapRouter.swapTokensForExactTokens(_amountOut, _amountInMax, path, msg.sender, _deadline)[
+            0
+        ];
 
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
@@ -218,7 +224,7 @@ contract Payroll is Ownable, Initializable {
                 tokenIn: _tokenIn,
                 tokenOut: _tokenOut,
                 fee: _poolFee,
-                recipient: address(this),
+                recipient: msg.sender,
                 deadline: _deadline,
                 amountOut: _amountOut,
                 amountInMaximum: _amountInMax,
@@ -236,9 +242,6 @@ contract Payroll is Ownable, Initializable {
     function performMultiPayment(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
             performPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
-
-            // return the leftover for each token after perform all payments
-            returnLeftover(_payments[i].token);
         }
     }
 
@@ -258,20 +261,8 @@ contract Payroll is Ownable, Initializable {
 
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Cannot send to a 0 address");
-            TransferHelper.safeTransfer(_erc20TokenAddress, _receivers[i], _amountsToTransfer[i]);
+            TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
         emit BatchPaymentFinished(_receivers, _amountsToTransfer);
-    }
-
-    /**
-     * Return all balance of an ERC20 to the msg.sender.
-     * @param _erc20TokenAddress The address of the ERC20 token to transfer.
-     */
-    function returnLeftover(address _erc20TokenAddress) internal {
-        uint256 accountBalance = IERC20Basic(_erc20TokenAddress).balanceOf(address(this));
-
-        if (accountBalance > 0) {
-            TransferHelper.safeTransfer(_erc20TokenAddress, msg.sender, accountBalance);
-        }
     }
 }

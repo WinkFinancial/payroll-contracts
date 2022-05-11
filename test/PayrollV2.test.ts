@@ -43,7 +43,7 @@ describe('Contract: Payroll V2', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(uniswapV2Router02.address, true);
+    await payroll.initialize(uniswapV2Router02.address, tokenB.address, true);
 
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);
@@ -131,13 +131,13 @@ describe('Contract: Payroll V2', () => {
         {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
       ];
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(0);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(0);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(1999900);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(1999900);
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(100);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(100);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(2000000);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(2000000);
     });
 
     it('should only transfer', async () => {
