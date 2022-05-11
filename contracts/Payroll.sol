@@ -49,10 +49,7 @@ contract Payroll is Ownable, Initializable {
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
-    function initialize(
-        address _swapRouter,
-        bool _isSwapV2
-    ) public initializer {
+    function initialize(address _swapRouter, bool _isSwapV2) public initializer {
         updateSwapRouter(_swapRouter, _isSwapV2);
     }
 
@@ -61,17 +58,11 @@ contract Payroll is Ownable, Initializable {
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
-    function setSwapRouter(
-        address _swapRouter,
-        bool _isSwapV2
-    ) public onlyOwner {
+    function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
         updateSwapRouter(_swapRouter, _isSwapV2);
     }
 
-    function updateSwapRouter(
-        address _swapRouter,
-        bool _isSwapV2
-    ) internal {
+    function updateSwapRouter(address _swapRouter, bool _isSwapV2) internal {
         require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
         swapRouter = IUniswapBasic(_swapRouter);
