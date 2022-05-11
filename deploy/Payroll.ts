@@ -29,8 +29,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       proxy: {
         proxyContract: 'OpenZeppelinTransparentProxy',
         execute: {
-          methodName: 'initialize',
-          args: [swapRouter, isSwapV2],
+          init: {
+            methodName: 'initialize',
+            args: [swapRouter, isSwapV2],
+          },
         },
       },
       gasLimit: 4000000,
