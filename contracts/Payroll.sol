@@ -3,8 +3,9 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IERC20Basic.sol";
 import "./interfaces/IUniswapBasic.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
@@ -15,7 +16,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @notice Swap and transfer multiple ERC20 pairs to multiple accounts in a single transaction.
  * Use any router address of any DEX that uses Uniswap protocol v2 or v3 to make swaps.
  */
-contract Payroll is Ownable, Initializable {
+contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /**
      * Returns the address of the Uniswap protocol router, it could be v2 or v3.
      */
@@ -50,6 +51,8 @@ contract Payroll is Ownable, Initializable {
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
     function initialize(address _swapRouter, bool _isSwapV2) public initializer {
+        __ReentrancyGuard_init();
+        __Ownable_init();
         updateSwapRouter(_swapRouter, _isSwapV2);
     }
 

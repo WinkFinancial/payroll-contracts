@@ -1,5 +1,5 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import {ethers, getNamedAccounts} from 'hardhat';
 import {expect} from 'chai';
 import {encodePriceSqrt} from './helpers/encodePriceSqrt';
 import {getMaxTick, getMinTick} from './helpers/ticks';
@@ -37,6 +37,7 @@ let userB: SignerWithAddress;
 describe('Contract: Payroll V3', () => {
   before(async () => {
     [admin, payer, userA, userB] = await ethers.getSigners();
+    const {deployer} = await getNamedAccounts();
 
     const Token = await ethers.getContractFactory('Token');
     const token = (await Token.deploy('My Custom Token 0', 'MCT0')) as Token;
@@ -225,6 +226,12 @@ describe('Contract: Payroll V3', () => {
       expect(payroll.setSwapRouter(ethers.constants.AddressZero, true)).to.be.revertedWith(
         'Cannot set a 0 address as swapRouter'
       );
+    });
+
+    it('should not update swapRouter with a zero address', async () => {
+      const PayrollTest = await ethers.getContractFactory('Payroll');
+      const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
+      expect(payrollTest.initialize(router.address, false)).to.be.revertedWith('Cannot set a 0 address as swapRouter');
     });
   });
 });

@@ -1,5 +1,5 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import {ethers, getNamedAccounts} from 'hardhat';
 import {expect} from 'chai';
 import {Contract, BigNumber} from 'ethers';
 import {deploy, createPair, addLiquidity, DeployResult} from './helpers/uniswap';
@@ -20,6 +20,7 @@ let userB: SignerWithAddress;
 describe('Contract: Payroll V2', () => {
   before(async () => {
     [admin, payer, userA, userB] = await ethers.getSigners();
+    const {deployer} = await getNamedAccounts();
 
     const Token = await ethers.getContractFactory('Token');
     tokenA = (await Token.deploy('Token_A', 'TKA')) as Token;
