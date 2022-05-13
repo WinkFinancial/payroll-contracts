@@ -4,6 +4,8 @@ import {DeployFunction} from 'hardhat-deploy/types';
 const version = 'v0.2.0';
 const contractName = 'Payroll';
 
+const UNISWAP_V2_CHAINS = [56, 97];
+
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
     // Hardhat always runs the compile task when running scripts with its command
@@ -13,25 +15,38 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-    const {deployments, getNamedAccounts} = hre;
+    const {deployments, getNamedAccounts, network} = hre;
+    const chainId = network.config.chainId || 0;
 
     const {deploy} = deployments;
 
-    const {deployer, proxyOwner, swapRouter} = await getNamedAccounts();
+    const {deployer, swapRouter} = await getNamedAccounts();
 
-    await deploy(contractName, {
-      contract: contractName,
+    const isSwapV2 = UNISWAP_V2_CHAINS.indexOf(chainId) === -1 ? false : true;
+
+    const deployResult = await deploy(contractName, {
       from: deployer,
       proxy: {
-        owner: proxyOwner,
         proxyContract: 'OpenZeppelinTransparentProxy',
         execute: {
-          methodName: 'initialize',
-          args: [deployer, swapRouter],
+          init: {
+            methodName: 'initialize',
+            args: [swapRouter, isSwapV2],
+          },
         },
       },
+      gasLimit: 4000000,
       log: true,
     });
+
+    if (deployResult.newlyDeployed) {
+      if (network.live) {
+        console.log(`Startig Verification of Payroll_Implementation ${deployResult.implementation}`);
+        await hre.run('verify:verify', {
+          address: deployResult.implementation,
+        });
+      }
+    }
 
     return true;
   }

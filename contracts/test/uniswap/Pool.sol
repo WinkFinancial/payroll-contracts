@@ -211,31 +211,12 @@ contract Pool is IERC721Receiver {
         TransferHelper.safeTransfer(deposits[_tokenId].tokenB, deposits[_tokenId].owner, amountB);
     }
 
-    /// @dev Returns the position information associated with a given token ID
-    /// @param _tokenId The ID of the token that represents the position
-    function getPosition(uint256 _tokenId)
-        external
-        view
-        returns (
-            address operator,
-            address tokenA,
-            address tokenB,
-            uint128 liquidity,
-            uint128 owedA,
-            uint128 owedB
-        )
-    {
-        (, operator, tokenA, tokenB, , , , liquidity, , , owedA, owedB) = nonfungiblePositionManager.positions(
-            _tokenId
-        );
-    }
-
     function onERC721Received(
         address,
         address,
         uint256,
         bytes calldata
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }

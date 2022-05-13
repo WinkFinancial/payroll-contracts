@@ -1,8 +1,9 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import {ethers, getNamedAccounts} from 'hardhat';
 import {expect} from 'chai';
 import {encodePriceSqrt} from './helpers/encodePriceSqrt';
 import {getMaxTick, getMinTick} from './helpers/ticks';
+import {Contract} from 'ethers';
 
 import {
   abi as FACTORY_ABI,
@@ -22,6 +23,7 @@ import {
 import {Token, Pool, Payroll} from '../typechain-types';
 import {PaymentStruct, SwapStruct} from '../typechain-types/Payroll';
 
+let router: Contract;
 let tokenA: Token;
 let tokenB: Token;
 let tokenC: Token;
@@ -32,9 +34,10 @@ let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
 
-describe('Contract: Payroll', () => {
+describe('Contract: Payroll V3', () => {
   before(async () => {
     [admin, payer, userA, userB] = await ethers.getSigners();
+    const {deployer} = await getNamedAccounts();
 
     const Token = await ethers.getContractFactory('Token');
     const token = (await Token.deploy('My Custom Token 0', 'MCT0')) as Token;
@@ -64,11 +67,11 @@ describe('Contract: Payroll', () => {
     pool = (await Pool.deploy(factory.address, nft_manager.address)) as Pool;
 
     const Router = new ethers.ContractFactory(ROUTER_ABI, ROUTER_BYTECODE, admin);
-    const router = await Router.deploy(factory.address, token.address);
+    router = await Router.deploy(factory.address, token.address);
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(admin.address, router.address);
+    await payroll.initialize(router.address, false);
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
@@ -159,13 +162,13 @@ describe('Contract: Payroll', () => {
         {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
       ];
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(0);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(0);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(1999900);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(1999900);
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
 
-      expect(await tokenA.balanceOf(payroll.address)).to.equal(100);
-      expect(await tokenC.balanceOf(payroll.address)).to.equal(100);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(2000000);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(2000000);
     });
 
     it('should only transfer', async () => {
@@ -182,6 +185,53 @@ describe('Contract: Payroll', () => {
 
       expect(await tokenB.balanceOf(userA.address)).to.equal(150);
       expect(await tokenB.balanceOf(userB.address)).to.equal(150);
+    });
+
+    it('should revert because amountsToTransfers and receivers length', async () => {
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenB.address,
+          totalAmountToPay: 100,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50, 50],
+        },
+      ];
+
+      expect(
+        payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+      ).to.be.revertedWith('Arrays must have same length');
+    });
+
+    it('should revert because one receiver is a zero address', async () => {
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenB.address,
+          totalAmountToPay: 100,
+          receivers: [userA.address, ethers.constants.AddressZero],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      expect(
+        payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+      ).to.be.revertedWith('Cannot send to a 0 address');
+    });
+
+    it('should update swapRouter', async () => {
+      await payroll.setSwapRouter(router.address, true);
+      expect(await payroll.isSwapV2()).to.be.true;
+    });
+
+    it('should not update swapRouter with a zero address', async () => {
+      expect(payroll.setSwapRouter(ethers.constants.AddressZero, true)).to.be.revertedWith(
+        'Cannot set a 0 address as swapRouter'
+      );
+    });
+
+    it('should not update swapRouter with a zero address', async () => {
+      const PayrollTest = await ethers.getContractFactory('Payroll');
+      const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
+      expect(payrollTest.initialize(router.address, false)).to.be.revertedWith('Cannot set a 0 address as swapRouter');
     });
   });
 });
