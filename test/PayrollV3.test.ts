@@ -1,5 +1,5 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers, getNamedAccounts} from 'hardhat';
+import {ethers} from 'hardhat';
 import {expect} from 'chai';
 import {encodePriceSqrt} from './helpers/encodePriceSqrt';
 import {getMaxTick, getMinTick} from './helpers/ticks';
@@ -37,7 +37,6 @@ let userB: SignerWithAddress;
 describe('Contract: Payroll V3', () => {
   before(async () => {
     [admin, payer, userA, userB] = await ethers.getSigners();
-    const {deployer} = await getNamedAccounts();
 
     const Token = await ethers.getContractFactory('Token');
     const token = (await Token.deploy('My Custom Token 0', 'MCT0')) as Token;
