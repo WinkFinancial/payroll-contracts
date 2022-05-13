@@ -10,6 +10,7 @@ const forkEnabled = process.env.FORK_ENABLED || false;
 
 const networks: HardhatUserConfig['networks'] = {
   localhost: {
+    live: false,
     chainId: 1,
     url: 'http://127.0.0.1:8545',
     allowUnlimitedContractSize: true,
@@ -18,6 +19,7 @@ const networks: HardhatUserConfig['networks'] = {
 
 if (forkEnabled) {
   networks.hardhat = {
+    live: false,
     chainId: 1,
     forking: {
       url: alchemyUrl,
@@ -28,12 +30,14 @@ if (forkEnabled) {
   };
 } else {
   networks.hardhat = {
+    live: false,
     allowUnlimitedContractSize: true,
   };
 }
 
 if (mnemonic) {
   networks.bsc = {
+    live: true,
     chainId: 56,
     url: 'https://bsc-dataseed.binance.org',
     accounts: {
@@ -42,6 +46,7 @@ if (mnemonic) {
   };
 
   networks.bscTestnet = {
+    live: true,
     chainId: 97,
     url: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
     accounts: {
@@ -50,6 +55,7 @@ if (mnemonic) {
   };
 
   networks.matic = {
+    live: true,
     chainId: 137,
     url: 'https://rpc-mainnet.maticvigil.com',
     accounts: {
@@ -58,6 +64,7 @@ if (mnemonic) {
   };
 
   networks.mumbai = {
+    live: true,
     chainId: 80001,
     url: 'https://rpc-mumbai.matic.today',
     accounts: {
@@ -68,6 +75,7 @@ if (mnemonic) {
 
 if (infuraApiKey && mnemonic) {
   networks.kovan = {
+    live: true,
     url: `https://kovan.infura.io/v3/${infuraApiKey}`,
     chainId: 42,
     accounts: {
@@ -76,6 +84,7 @@ if (infuraApiKey && mnemonic) {
   };
 
   networks.ropsten = {
+    live: true,
     url: `https://ropsten.infura.io/v3/${infuraApiKey}`,
     chainId: 3,
     accounts: {
@@ -88,7 +97,6 @@ if (infuraApiKey && mnemonic) {
     url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
     blockGasLimit: 8000000,
     chainId: 4,
-    hardfork: 'istanbul',
     accounts: {
       mnemonic,
     },
@@ -96,6 +104,7 @@ if (infuraApiKey && mnemonic) {
   };
 
   networks.mainnet = {
+    live: true,
     url: alchemyUrl,
     accounts: {
       mnemonic,
