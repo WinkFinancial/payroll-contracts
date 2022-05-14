@@ -21,6 +21,9 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * Returns the address of the Uniswap protocol router, it could be v2 or v3.
      */
     IUniswapBasic public swapRouter;
+    address public feeAddress;
+    uint256 public fee;
+    uint256  public constant MANTISSA = 1e18;
 
     /**
      * Returns if the contract is working with a v2 Uniswap protocol;
@@ -43,6 +46,10 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     event SwapRouterChanged(address _swapRouter, bool _isSwapV2);
+    event FeeChanged(uint256 _fee);
+    event FeeCharged(address _erc20TokenAddress, address _feeAddress, uint256 _fees);
+    event WithdrawFees(address[] _erc20TokenAddresses, uint256[] _amountsToTransfer);
+    event FeeAddressChanged(address _feeAddress);
     event BatchPaymentFinished(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
@@ -50,10 +57,57 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
-    function initialize(address _swapRouter, bool _isSwapV2) public initializer {
+    function initialize(address _swapRouter, bool _isSwapV2, address _feeAddress, uint256 _fee) public initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
         _setSwapRouter(_swapRouter, _isSwapV2);
+        _setFeeAddress(_feeAddress);
+        _setFee(_fee);
+    }
+
+    /**
+     * Set the fee that will be charged, fees are divided by mantissa
+     * @param _fee Percentage that will be charged.
+     */
+    function setFee(uint256 _fee) external onlyOwner {
+        _setFee(_fee);
+    }
+
+    function _setFee(uint256 _fee) internal {
+        require(_fee < 3e16, "Payroll: Fee should be less than 3%");
+        fee = _fee;
+        emit FeeChanged(_fee);
+    }
+
+    /**
+     * Set the address that will receive the fees.
+     * @param _feeAddress Address that will receive the fees.
+     */
+    function setFeeAddress(address _feeAddress) external onlyOwner {
+        _setFeeAddress(_feeAddress);
+    }
+
+    function _setFeeAddress(address _feeAddress) internal {
+        require(_feeAddress != address(0), "Payroll: Fee address can't be 0");
+        feeAddress = _feeAddress;
+        emit FeeAddressChanged(_feeAddress);
+    }
+
+    /**
+     * Approves the following token to be used on swapRouter
+     * @param _erc20TokenOrigin ERC20 token address to approve.
+     * @param _amountsToTransfer The array of payments' amounts to perform.
+     */
+    function withdrawFees(
+        address[] calldata _erc20TokenOrigin,
+        uint[] calldata _amountsToTransfer
+    ) external nonReentrant {
+        require(_amountsToTransfer.length == _amountsToTransfer.length, "Payroll: Arrays must have same length");
+
+        for (uint256 i = 0; i < _erc20TokenOrigin.length; i++) {
+            TransferHelper.safeTransferFrom(_erc20TokenOrigin[i], address(this), msg.sender, _amountsToTransfer[i]);
+        }
+        emit WithdrawFees(_erc20TokenOrigin, _amountsToTransfer);
     }
 
     /**
@@ -255,10 +309,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         require(_erc20TokenAddress != address(0), "Payroll: Token is 0 address");
         require(_amountsToTransfer.length == _receivers.length, "Payroll: Arrays must have same length");
 
+        uint256 acumulatedFee = 0;
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
+            acumulatedFee = _amountsToTransfer[i] * fee / MANTISSA;
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
         emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
+        if(acumulatedFee > 0) {
+            TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, address(this), acumulatedFee);
+        }
+        emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
     }
 }

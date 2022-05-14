@@ -34,6 +34,7 @@ let admin: SignerWithAddress;
 let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
+let feeAddress: SignerWithAddress;
 let deadline = 0;
 
 describe('Contract: Payroll UniV3', () => {
@@ -42,7 +43,7 @@ describe('Contract: Payroll UniV3', () => {
       method: "hardhat_reset"
     });
 
-    [admin, payer, userA, userB] = await ethers.getSigners();
+    [admin, payer, userA, userB, feeAddress] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory('Token');
     const token = (await Token.deploy('My Custom Token 0', 'MCT0')) as Token;
@@ -76,7 +77,8 @@ describe('Contract: Payroll UniV3', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(router.address, false);
+    await payroll.initialize(router.address, true, feeAddress.address, 0);
+
 
     await pool.createPool(tokenA.address, tokenB.address, 3000, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, 3000, encodePriceSqrt(1, 1));

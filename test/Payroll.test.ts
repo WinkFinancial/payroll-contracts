@@ -17,13 +17,14 @@ let admin: SignerWithAddress;
 let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
+let feeAddress: SignerWithAddress;
 
 describe('Contract: Payroll UniV2', () => {
   beforeEach(async () => {
     await network.provider.request({
       method: "hardhat_reset"
     });
-    [admin, payer, userA, userB] = await ethers.getSigners();
+    [admin, payer, userA, userB, feeAddress] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory('Token');
     tokenA = (await Token.deploy('Token_A', 'TKA')) as Token;
@@ -47,7 +48,7 @@ describe('Contract: Payroll UniV2', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(uniswapV2Router02.address, true);
+    await payroll.initialize(uniswapV2Router02.address, true, feeAddress.address, 0);
 
 
     await tokenB.transfer(payer.address, 1000000);
@@ -95,7 +96,14 @@ describe('Contract: Payroll UniV2', () => {
     it('should not initialize swapRouter with a zero address', async () => {
       const PayrollTest = await ethers.getContractFactory('Payroll');
       const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
-      await expect(payrollTest.initialize(ethers.constants.AddressZero, false)).to.be.revertedWith('Payroll: Cannot set a 0 address as swapRouter');
+      await expect(payrollTest.initialize(ethers.constants.AddressZero, false, feeAddress.address, 0)
+      ).to.be.revertedWith('Payroll: Cannot set a 0 address as swapRouter');
+    });
+
+    it('should not initialize feeAddress with a zero address', async () => {
+      const PayrollTest = await ethers.getContractFactory('Payroll');
+      const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
+      await expect(payrollTest.initialize(uniswapV2Router02.address, false, ethers.constants.AddressZero, 0)).to.be.revertedWith(`Payroll: Fee address can't be 0`);
     });
 
 

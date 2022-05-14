@@ -17,6 +17,7 @@ let admin: SignerWithAddress;
 let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
+let feeAddress: SignerWithAddress;
 let deadline = 0;
 
 describe('Contract: Payroll UniV2', () => {
@@ -24,7 +25,7 @@ describe('Contract: Payroll UniV2', () => {
     await network.provider.request({
       method: "hardhat_reset"
     });
-    [admin, payer, userA, userB] = await ethers.getSigners();
+    [admin, payer, userA, userB, feeAddress] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory('Token');
     tokenA = (await Token.deploy('Token_A', 'TKA')) as Token;
@@ -48,7 +49,7 @@ describe('Contract: Payroll UniV2', () => {
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
-    await payroll.initialize(uniswapV2Router02.address, true);
+    await payroll.initialize(uniswapV2Router02.address, true, feeAddress.address, 0);
 
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);
