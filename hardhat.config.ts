@@ -49,7 +49,7 @@ const config: HardhatUserConfig = {
     only: [':Payroll$'],
   },
   contractSizer: {
-    runOnCompile: true,
+    runOnCompile: false,
   },
   etherscan: {
     apiKey: {

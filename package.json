@@ -17,6 +17,7 @@
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
     "clean": "hardhat clean",
+    "size": "hardhat size-contracts",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
     "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy"
   },

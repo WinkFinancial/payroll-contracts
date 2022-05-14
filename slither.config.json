@@ -1,0 +1,4 @@
+{
+    "filter_paths": "contracts/test,contracts/interface,node_modules",
+    "detectors_to_exclude": "solc-version,pragma,naming-convention,too-many-digits,assembly-usage, similar-names, timestamp"
+}

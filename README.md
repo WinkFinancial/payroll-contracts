@@ -38,6 +38,12 @@ Generate Documentation
 $ yarn docgen
 ```
 
+Contract Sizes
+
+```sh
+$ yarn size
+```
+
 
 ### Test
 
