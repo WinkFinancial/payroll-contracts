@@ -42,8 +42,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint24 poolFee;
     }
 
-    event BatchPaymentFinished(address[] _receivers, uint256[] _amountsToTransfer);
-
+    event SwapRouterChanged(address _swapRouter, bool _isSwapV2);
+    event BatchPaymentFinished(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
@@ -53,7 +53,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     function initialize(address _swapRouter, bool _isSwapV2) public initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
-        updateSwapRouter(_swapRouter, _isSwapV2);
+        _setSwapRouter(_swapRouter, _isSwapV2);
     }
 
     /**
@@ -61,20 +61,34 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
-    function setSwapRouter(address _swapRouter, bool _isSwapV2) public onlyOwner {
-        updateSwapRouter(_swapRouter, _isSwapV2);
+    function setSwapRouter(address _swapRouter, bool _isSwapV2) external onlyOwner {
+        _setSwapRouter(_swapRouter, _isSwapV2);
     }
 
-    function updateSwapRouter(address _swapRouter, bool _isSwapV2) internal {
-        require(_swapRouter != address(0), "Cannot set a 0 address as swapRouter");
+    function _setSwapRouter(address _swapRouter, bool _isSwapV2) internal {
+        require(_swapRouter != address(0), "Payroll: Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
         swapRouter = IUniswapBasic(_swapRouter);
+        emit SwapRouterChanged(_swapRouter, _isSwapV2);
+    }
+
+    /**
+     * Approves the following token to be used on swapRouter
+     * @param _erc20TokenOrigin ERC20 token address to approve.
+     */
+    function approveToken(
+        address[] calldata _erc20TokenOrigin
+    ) external nonReentrant {
+        for (uint256 i = 0; i < _erc20TokenOrigin.length; i++) {
+            // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
+            TransferHelper.safeApprove(_erc20TokenOrigin[i], address(swapRouter), type(uint256).max );
+        }
     }
 
     /**
      * Perform the swap and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
-     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
@@ -82,42 +96,42 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      */
     function performSwapAndPayment(
         address _erc20TokenOrigin,
-        uint256 _totalAmountToSpend,
+        uint256 _totalAmountToSwap,
         uint32 _deadline,
         Swap[] calldata _swaps,
         Payment[] calldata _payments
-    ) external {
+    ) external nonReentrant {
         if (_swaps.length > 0) {
-            performSwap(_erc20TokenOrigin, _totalAmountToSpend, _deadline, _swaps);
+            _performSwap(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
         }
 
-        performMultiPayment(_payments);
+        _performMultiPayment(_payments);
     }
 
     /**
      * Perform the swap to the given token addresses and amounts.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
-     * @param _totalAmountToSpend Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      */
-    function performSwap(
+    function _performSwap(
         address _erc20TokenOrigin,
-        uint256 _totalAmountToSpend,
+        uint256 _totalAmountToSwap,
         uint32 _deadline,
         Swap[] calldata _swaps
     ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
-        TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSpend);
+        TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
+        uint256 allowance = IERC20(_erc20TokenOrigin).allowance(msg.sender, address(this));
+        require(allowance > _totalAmountToSwap, "Payroll: Token not approved");
 
-        // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-        TransferHelper.safeApprove(_erc20TokenOrigin, address(swapRouter), _totalAmountToSpend);
 
         // determines which version of uniswap protocol will be used to perform the swap
         if (isSwapV2) {
             for (uint256 i = 0; i < _swaps.length; i++) {
-                swapTokensForExactTokens(
+                _swapTokensForExactTokens(
                     _erc20TokenOrigin,
                     _swaps[i].token,
                     _swaps[i].amountOut,
@@ -127,7 +141,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             }
         } else {
             for (uint256 i = 0; i < _swaps.length; i++) {
-                swapExactOutputSingle(
+                _swapExactOutputSingle(
                     _erc20TokenOrigin,
                     _swaps[i].token,
                     _swaps[i].poolFee,
@@ -154,7 +168,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _amountInMax Max amount of tokenIn to pay.
      * @param _deadline The unix timestamp after a swap will fail.
      */
-    function swapTokensForExactTokens(
+    function _swapTokensForExactTokens(
         address _tokenIn,
         address _tokenOut,
         uint256 _amountOut,
@@ -183,7 +197,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _deadline The unix timestamp after a swap will fail.
      * @notice Currently the function only works with single pools tokenIn/tokenOut.
      */
-    function swapExactOutputSingle(
+    function _swapExactOutputSingle(
         address _tokenIn,
         address _tokenOut,
         uint24 _poolFee,
@@ -209,12 +223,20 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Perform the payments to the given addresses and amounts.
+     * Perform the payments to the given addresses and amounts, public method.
      * @param _payments The array of the Payment data.
      */
-    function performMultiPayment(Payment[] calldata _payments) internal {
+    function performMultiPayment(Payment[] calldata _payments) external nonReentrant {
+        _performMultiPayment(_payments);
+    }
+
+    /**
+     * Perform the payments to the given addresses and amounts, internal method.
+     * @param _payments The array of the Payment data.
+     */
+    function _performMultiPayment(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
-            performPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
+            _performPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
         }
     }
 
@@ -225,17 +247,18 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _amountsToTransfer The array of payments' amounts to perform.
      * The amount will be transfered to the address on _receivers with the same index.
      */
-    function performPayment(
+    function _performPayment(
         address _erc20TokenAddress,
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
     ) internal {
-        require(_amountsToTransfer.length == _receivers.length, "Arrays must have same length");
+        require(_erc20TokenAddress != address(0), "Payroll: Token is 0 address");
+        require(_amountsToTransfer.length == _receivers.length, "Payroll: Arrays must have same length");
 
         for (uint256 i = 0; i < _receivers.length; i++) {
-            require(_receivers[i] != address(0), "Cannot send to a 0 address");
+            require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
-        emit BatchPaymentFinished(_receivers, _amountsToTransfer);
+        emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
     }
 }

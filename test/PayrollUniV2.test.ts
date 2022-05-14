@@ -6,6 +6,7 @@ import {deploy, createPair, addLiquidity, DeployResult} from './helpers/uniswap'
 
 import {Token, Payroll} from '../typechain-types';
 import {PaymentStruct, SwapStruct} from '../typechain-types/Payroll';
+import {network} from 'hardhat';
 
 let uniswapV2Router02: Contract;
 let tokenA: Token;
@@ -16,9 +17,13 @@ let admin: SignerWithAddress;
 let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
+let deadline = 0;
 
-describe('Contract: Payroll V2', () => {
-  before(async () => {
+describe('Contract: Payroll UniV2', () => {
+  beforeEach(async () => {
+    await network.provider.request({
+      method: "hardhat_reset"
+    });
     [admin, payer, userA, userB] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory('Token');
@@ -67,24 +72,22 @@ describe('Contract: Payroll V2', () => {
       token1: tokenB,
       amountB: BigNumber.from('1000000000000'),
     });
+
+    await tokenB.transfer(payer.address, 1000000);
+    await tokenA.transfer(payer.address, 1000000);
+    await tokenC.transfer(payer.address, 1000000);
+
+    const timestamp = Date.now() + 1000 * 60 * 60;
+    deadline = Math.floor(timestamp / 1000);
   });
 
-  describe('Payroll', () => {
-    let deadline = 0;
-
+  describe('Tokens Approved', () => {
     beforeEach(async () => {
-      await tokenB.transfer(payer.address, 1000000);
       await tokenB.connect(payer).approve(payroll.address, 1000000);
-
-      await tokenA.transfer(payer.address, 1000000);
       await tokenA.connect(payer).approve(payroll.address, 1000000);
-
-      await tokenC.transfer(payer.address, 1000000);
       await tokenC.connect(payer).approve(payroll.address, 1000000);
-
-      const timestamp = Date.now() + 1000 * 60 * 60;
-      deadline = Math.floor(timestamp / 1000);
-    });
+      await payroll.approveToken([tokenA.address, tokenB.address, tokenC.address])
+    })
 
     it('should swap and transfer', async () => {
       const swaps: SwapStruct[] = [
@@ -131,13 +134,16 @@ describe('Contract: Payroll V2', () => {
         {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
       ];
 
-      expect(await tokenA.balanceOf(payer.address)).to.equal(1999900);
-      expect(await tokenC.balanceOf(payer.address)).to.equal(1999900);
+      const previousBalanceTokenA = await tokenA.balanceOf(payer.address)
+      const previousBalanceTokenC = await tokenC.balanceOf(payer.address)
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
+      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, [])
 
-      expect(await tokenA.balanceOf(payer.address)).to.equal(2000000);
-      expect(await tokenC.balanceOf(payer.address)).to.equal(2000000);
+      const newBalanceTokenA = await tokenA.balanceOf(payer.address)
+      const newBalanceTokenC = await tokenC.balanceOf(payer.address)
+
+      expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100)
+      expect(newBalanceTokenC.sub(previousBalanceTokenC)).to.equal(100)
     });
 
     it('should only transfer', async () => {
@@ -150,10 +156,11 @@ describe('Contract: Payroll V2', () => {
         },
       ];
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments);
+      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 100, deadline, [], payments)
 
-      expect(await tokenB.balanceOf(userA.address)).to.equal(150);
-      expect(await tokenB.balanceOf(userB.address)).to.equal(150);
+      expect(await tokenB.balanceOf(userA.address)).to.equal(50)
+      expect(await tokenB.balanceOf(userB.address)).to.equal(50)
     });
+
   });
 });

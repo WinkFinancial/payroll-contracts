@@ -4,6 +4,7 @@ import {expect} from 'chai';
 import {encodePriceSqrt} from './helpers/encodePriceSqrt';
 import {getMaxTick, getMinTick} from './helpers/ticks';
 import {Contract} from 'ethers';
+import {network} from 'hardhat';
 
 import {
   abi as FACTORY_ABI,
@@ -33,9 +34,14 @@ let admin: SignerWithAddress;
 let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
+let deadline = 0;
 
-describe('Contract: Payroll V3', () => {
-  before(async () => {
+describe('Contract: Payroll UniV3', () => {
+  beforeEach(async () => {
+    await network.provider.request({
+      method: "hardhat_reset"
+    });
+
     [admin, payer, userA, userB] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory('Token');
@@ -84,8 +90,8 @@ describe('Contract: Payroll V3', () => {
       3000,
       getMinTick(3000),
       getMaxTick(3000),
-      1000000000000,
-      1000000000000
+      100000000000,
+      100000000000
     );
 
     await pool.mintNewPosition(
@@ -94,26 +100,25 @@ describe('Contract: Payroll V3', () => {
       3000,
       getMinTick(3000),
       getMaxTick(3000),
-      1000000000000,
-      1000000000000
+      100000000000,
+      100000000000
     );
+
+    await tokenB.transfer(payer.address, 1000000);
+    await tokenA.transfer(payer.address, 1000000);
+    await tokenC.transfer(payer.address, 1000000);
+
+    const timestamp = Date.now() + 1000 * 60 * 60;
+    deadline = Math.floor(timestamp / 1000);
   });
 
-  describe('Payroll', () => {
-    let deadline = 0;
+  describe('Tokens Approved', () => {
 
     beforeEach(async () => {
-      await tokenB.transfer(payer.address, 1000000);
       await tokenB.connect(payer).approve(payroll.address, 1000000);
-
-      await tokenA.transfer(payer.address, 1000000);
       await tokenA.connect(payer).approve(payroll.address, 1000000);
-
-      await tokenC.transfer(payer.address, 1000000);
       await tokenC.connect(payer).approve(payroll.address, 1000000);
-
-      const timestamp = Date.now() + 1000 * 60 * 60;
-      deadline = Math.floor(timestamp / 1000);
+      await payroll.approveToken([tokenA.address, tokenB.address, tokenC.address])
     });
 
     it('should swap and transfer', async () => {
@@ -161,13 +166,16 @@ describe('Contract: Payroll V3', () => {
         {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
       ];
 
-      expect(await tokenA.balanceOf(payer.address)).to.equal(1999900);
-      expect(await tokenC.balanceOf(payer.address)).to.equal(1999900);
+      const previousBalanceTokenA = await tokenA.balanceOf(payer.address)
+      const previousBalanceTokenC = await tokenC.balanceOf(payer.address)
 
       await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
 
-      expect(await tokenA.balanceOf(payer.address)).to.equal(2000000);
-      expect(await tokenC.balanceOf(payer.address)).to.equal(2000000);
+      const newBalanceTokenA = await tokenA.balanceOf(payer.address)
+      const newBalanceTokenC = await tokenC.balanceOf(payer.address)
+
+      expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100)
+      expect(newBalanceTokenC.sub(previousBalanceTokenC)).to.equal(100)
     });
 
     it('should only transfer', async () => {
@@ -180,10 +188,10 @@ describe('Contract: Payroll V3', () => {
         },
       ];
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments);
+      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 100, deadline, [], payments);
 
-      expect(await tokenB.balanceOf(userA.address)).to.equal(150);
-      expect(await tokenB.balanceOf(userB.address)).to.equal(150);
+      expect(await tokenB.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(50);
     });
 
     it('should revert because amountsToTransfers and receivers length', async () => {
@@ -196,9 +204,9 @@ describe('Contract: Payroll V3', () => {
         },
       ];
 
-      expect(
+      await expect(
         payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
-      ).to.be.revertedWith('Arrays must have same length');
+      ).to.be.revertedWith('Payroll: Arrays must have same length');
     });
 
     it('should revert because one receiver is a zero address', async () => {
@@ -211,26 +219,10 @@ describe('Contract: Payroll V3', () => {
         },
       ];
 
-      expect(
+      await expect(
         payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
-      ).to.be.revertedWith('Cannot send to a 0 address');
+      ).to.be.revertedWith('Payroll: Cannot send to a 0 address');
     });
 
-    it('should update swapRouter', async () => {
-      await payroll.setSwapRouter(router.address, true);
-      expect(await payroll.isSwapV2()).to.be.true;
-    });
-
-    it('should not update swapRouter with a zero address', async () => {
-      expect(payroll.setSwapRouter(ethers.constants.AddressZero, true)).to.be.revertedWith(
-        'Cannot set a 0 address as swapRouter'
-      );
-    });
-
-    it('should not update swapRouter with a zero address', async () => {
-      const PayrollTest = await ethers.getContractFactory('Payroll');
-      const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
-      expect(payrollTest.initialize(router.address, false)).to.be.revertedWith('Cannot set a 0 address as swapRouter');
-    });
   });
 });

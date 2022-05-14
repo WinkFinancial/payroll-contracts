@@ -4,6 +4,12 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "_erc20TokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
         "internalType": "address[]",
         "name": "_receivers",
         "type": "address[]"
@@ -63,6 +69,38 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "_swapRouter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "_isSwapV2",
+        "type": "bool"
+      }
+    ],
+    "name": "SwapRouterChanged",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_erc20TokenOrigin",
+        "type": "address[]"
+      }
+    ],
+    "name": "approveToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -109,13 +147,48 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalAmountToPay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "receivers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amountsToTransfer",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct Payroll.Payment[]",
+        "name": "_payments",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performMultiPayment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_erc20TokenOrigin",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_totalAmountToSpend",
+        "name": "_totalAmountToSwap",
         "type": "uint256"
       },
       {
