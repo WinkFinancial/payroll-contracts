@@ -132,6 +132,20 @@ describe('Contract: Payroll', () => {
       expect(await tokenB.balanceOf(userB.address)).to.equal(50);
     });
 
+    it('should revert if empty amounts', async () => {
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenB.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [],
+        },
+      ];
+
+      await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
+        'Payroll: No amounts to transfer'
+      );
+    });
+
     it('should revert because amountsToTransfers and receivers length', async () => {
       const payments: PaymentStruct[] = [
         {
