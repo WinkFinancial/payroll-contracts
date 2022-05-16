@@ -23,7 +23,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     IUniswapBasic public swapRouter;
     address public feeAddress;
     uint256 public fee;
-    uint256  public constant MANTISSA = 1e18;
+    uint256 public constant MANTISSA = 1e18;
 
     /**
      * Returns if the contract is working with a v2 Uniswap protocol;
@@ -55,7 +55,12 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
      */
-    function initialize(address _swapRouter, bool _isSwapV2, address _feeAddress, uint256 _fee) public initializer {
+    function initialize(
+        address _swapRouter,
+        bool _isSwapV2,
+        address _feeAddress,
+        uint256 _fee
+    ) public initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
         _setSwapRouter(_swapRouter, _isSwapV2);
@@ -111,12 +116,10 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * Approves the following token to be used on swapRouter
      * @param _erc20TokenOrigin ERC20 token address to approve.
      */
-    function approveTokens(
-        address[] calldata _erc20TokenOrigin
-    ) external nonReentrant {
+    function approveTokens(address[] calldata _erc20TokenOrigin) external nonReentrant {
         for (uint256 i = 0; i < _erc20TokenOrigin.length; i++) {
             // approves the swapRouter to spend totalAmountToSpend of erc20TokenOrigin
-            TransferHelper.safeApprove(_erc20TokenOrigin[i], address(swapRouter), type(uint256).max );
+            TransferHelper.safeApprove(_erc20TokenOrigin[i], address(swapRouter), type(uint256).max);
         }
     }
 
@@ -183,14 +186,10 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                 );
             }
         }
-        uint256 leftOver =  IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
-        if(leftOver > 0) {
+        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+        if (leftOver > 0) {
             // return the leftover of _erc20TokenOrigin
-            TransferHelper.safeTransfer(
-                _erc20TokenOrigin,
-                msg.sender,
-                leftOver
-            );
+            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
         }
     }
 
@@ -292,11 +291,11 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 acumulatedFee = 0;
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
-            acumulatedFee = acumulatedFee + _amountsToTransfer[i] * fee / MANTISSA;
+            acumulatedFee = acumulatedFee + (_amountsToTransfer[i] * fee) / MANTISSA;
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
         emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
-        if(acumulatedFee > 0) {
+        if (acumulatedFee > 0) {
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, feeAddress, acumulatedFee);
         }
         emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);

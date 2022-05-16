@@ -22,7 +22,7 @@ let feeAddress: SignerWithAddress;
 describe('Contract: Payroll', () => {
   beforeEach(async () => {
     await network.provider.request({
-      method: "hardhat_reset"
+      method: 'hardhat_reset',
     });
     [admin, payer, userA, userB, feeAddress] = await ethers.getSigners();
 
@@ -50,15 +50,12 @@ describe('Contract: Payroll', () => {
     payroll = (await Payroll.deploy()) as Payroll;
     await payroll.initialize(uniswapV2Router02.address, true, feeAddress.address, 0);
 
-
     await tokenB.transfer(payer.address, 1000000);
-
   });
-
 
   describe('SwapRouter', () => {
     it('should update swapRouter', async () => {
-      const newRouter = ethers.Wallet.createRandom()
+      const newRouter = ethers.Wallet.createRandom();
       await payroll.setSwapRouter(newRouter.address, true);
       expect(await payroll.isSwapV2()).to.be.true;
     });
@@ -72,40 +69,44 @@ describe('Contract: Payroll', () => {
     it('should not initialize swapRouter with a zero address', async () => {
       const PayrollTest = await ethers.getContractFactory('Payroll');
       const payrollTest: Payroll = (await PayrollTest.deploy()) as Payroll;
-      await expect(payrollTest.initialize(ethers.constants.AddressZero, false, feeAddress.address, 0)
+      await expect(
+        payrollTest.initialize(ethers.constants.AddressZero, false, feeAddress.address, 0)
       ).to.be.revertedWith('Payroll: Cannot set a 0 address as swapRouter');
     });
   });
 
   describe('Fees', () => {
     it('Should set feeAddress', async () => {
-      await payroll.setFeeAddress(userA.address)
+      await payroll.setFeeAddress(userA.address);
       expect(await payroll.feeAddress()).to.be.equal(userA.address);
     });
 
     it('should not set feeAddress with a zero address', async () => {
-      await expect(payroll.setFeeAddress(ethers.constants.AddressZero)).to.be.revertedWith(`Payroll: Fee address can't be 0`);
+      await expect(payroll.setFeeAddress(ethers.constants.AddressZero)).to.be.revertedWith(
+        `Payroll: Fee address can't be 0`
+      );
     });
 
     it('Only owner can set feeAddress', async () => {
-      await expect(payroll.connect(userA).setFeeAddress(userA.address)).to.be.revertedWith(`Ownable: caller is not the owner`);
+      await expect(payroll.connect(userA).setFeeAddress(userA.address)).to.be.revertedWith(
+        `Ownable: caller is not the owner`
+      );
     });
 
     it('Should set fee', async () => {
-      const fee  = BigNumber.from(100000)
-      await payroll.setFee(fee)
+      const fee = BigNumber.from(100000);
+      await payroll.setFee(fee);
       expect(await payroll.fee()).to.be.equal(fee);
     });
 
     it('should not set fee bigger or equal to 3%', async () => {
-      const fee  = ethers.utils.parseUnits('0.03', 'ether');
+      const fee = ethers.utils.parseUnits('0.03', 'ether');
       await expect(payroll.setFee(fee)).to.be.revertedWith(`Payroll: Fee should be less than 3%`);
     });
 
     it('Only owner can set fee', async () => {
       await expect(payroll.connect(userA).setFee(0)).to.be.revertedWith(`Ownable: caller is not the owner`);
     });
-
   });
 
   describe('performMultiPayment', () => {
@@ -113,8 +114,8 @@ describe('Contract: Payroll', () => {
       await tokenB.connect(payer).approve(payroll.address, 1000000);
       await tokenA.connect(payer).approve(payroll.address, 1000000);
       await tokenC.connect(payer).approve(payroll.address, 1000000);
-      await payroll.approveTokens([tokenA.address, tokenB.address, tokenC.address])
-    })
+      await payroll.approveTokens([tokenA.address, tokenB.address, tokenC.address]);
+    });
 
     it('should performMultiPayment transfer', async () => {
       const payments: PaymentStruct[] = [
@@ -127,8 +128,8 @@ describe('Contract: Payroll', () => {
 
       await payroll.connect(payer).performMultiPayment(payments);
 
-      expect(await tokenB.balanceOf(userA.address)).to.equal(50)
-      expect(await tokenB.balanceOf(userB.address)).to.equal(50)
+      expect(await tokenB.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(50);
     });
 
     it('should revert because amountsToTransfers and receivers length', async () => {
@@ -140,11 +141,10 @@ describe('Contract: Payroll', () => {
         },
       ];
 
-      await expect(
-        payroll.connect(payer).performMultiPayment(payments)
-      ).to.be.revertedWith('Payroll: Arrays must have same length');
+      await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
+        'Payroll: Arrays must have same length'
+      );
     });
-
 
     it('should revert because token address is zero', async () => {
       const payments: PaymentStruct[] = [
@@ -155,9 +155,9 @@ describe('Contract: Payroll', () => {
         },
       ];
 
-      await expect(
-        payroll.connect(payer).performMultiPayment(payments)
-      ).to.be.revertedWith('Payroll: Token is 0 address');
+      await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
+        'Payroll: Token is 0 address'
+      );
     });
 
     it('should revert because one receiver is a zero address', async () => {
@@ -169,11 +169,9 @@ describe('Contract: Payroll', () => {
         },
       ];
 
-      await expect(
-        payroll.connect(payer).performMultiPayment(payments)
-      ).to.be.revertedWith('Payroll: Cannot send to a 0 address');
+      await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
+        'Payroll: Cannot send to a 0 address'
+      );
     });
-
   });
-
 });

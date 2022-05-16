@@ -16,14 +16,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
     const {deployments, getNamedAccounts, network, ethers} = hre;
 
-    if(network.live) {
+    if (network.live) {
       const {dai, usdc, usdt, busd, btcb, eth, xrp} = await getNamedAccounts();
       const Payroll = await deployments.get('Payroll');
-      const instance =  await ethers.getContractAt(Payroll.abi, Payroll.address);
+      const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
       await instance.approveTokens([dai, usdc, usdt, busd, btcb, eth, xrp]);
-      console.log("Approved Tokens");
-  }
-
+      console.log('Approved Tokens');
+    }
 
     return true;
   }
