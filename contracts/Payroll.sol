@@ -33,7 +33,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
     struct Payment {
         address token;
-        uint256 totalAmountToPay;
         address[] receivers;
         uint256[] amountsToTransfer;
     }
@@ -48,7 +47,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     event SwapRouterChanged(address _swapRouter, bool _isSwapV2);
     event FeeChanged(uint256 _fee);
     event FeeCharged(address _erc20TokenAddress, address _feeAddress, uint256 _fees);
-    event WithdrawFees(address[] _erc20TokenAddresses, uint256[] _amountsToTransfer);
     event FeeAddressChanged(address _feeAddress);
     event BatchPaymentFinished(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
@@ -94,23 +92,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Approves the following token to be used on swapRouter
-     * @param _erc20TokenOrigin ERC20 token address to approve.
-     * @param _amountsToTransfer The array of payments' amounts to perform.
-     */
-    function withdrawFees(
-        address[] calldata _erc20TokenOrigin,
-        uint[] calldata _amountsToTransfer
-    ) external nonReentrant {
-        require(_amountsToTransfer.length == _amountsToTransfer.length, "Payroll: Arrays must have same length");
-
-        for (uint256 i = 0; i < _erc20TokenOrigin.length; i++) {
-            TransferHelper.safeTransferFrom(_erc20TokenOrigin[i], address(this), msg.sender, _amountsToTransfer[i]);
-        }
-        emit WithdrawFees(_erc20TokenOrigin, _amountsToTransfer);
-    }
-
-    /**
      * Set the SwapRouter and the version to be used.
      * @param _swapRouter Router address to execute swaps.
      * @param _isSwapV2 Boolean to specify the version of the router; true means v2, false means v3.
@@ -130,7 +111,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * Approves the following token to be used on swapRouter
      * @param _erc20TokenOrigin ERC20 token address to approve.
      */
-    function approveToken(
+    function approveTokens(
         address[] calldata _erc20TokenOrigin
     ) external nonReentrant {
         for (uint256 i = 0; i < _erc20TokenOrigin.length; i++) {
@@ -178,9 +159,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
-        uint256 allowance = IERC20(_erc20TokenOrigin).allowance(msg.sender, address(this));
-        require(allowance > _totalAmountToSwap, "Payroll: Token not approved");
-
 
         // determines which version of uniswap protocol will be used to perform the swap
         if (isSwapV2) {
@@ -205,13 +183,15 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                 );
             }
         }
-
-        // return the leftover of _erc20TokenOrigin
-        TransferHelper.safeTransfer(
-            _erc20TokenOrigin,
-            msg.sender,
-            IERC20Basic(_erc20TokenOrigin).balanceOf(address(this))
-        );
+        uint256 leftOver =  IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+        if(leftOver > 0) {
+            // return the leftover of _erc20TokenOrigin
+            TransferHelper.safeTransfer(
+                _erc20TokenOrigin,
+                msg.sender,
+                leftOver
+            );
+        }
     }
 
     /**
@@ -237,7 +217,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 amountIn = swapRouter.swapTokensForExactTokens(_amountOut, _amountInMax, path, msg.sender, _deadline)[
             0
         ];
-
         emit SwapFinished(_tokenIn, _tokenOut, amountIn);
     }
 
@@ -307,17 +286,18 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256[] calldata _amountsToTransfer
     ) internal {
         require(_erc20TokenAddress != address(0), "Payroll: Token is 0 address");
+        require(_amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
         require(_amountsToTransfer.length == _receivers.length, "Payroll: Arrays must have same length");
 
         uint256 acumulatedFee = 0;
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
-            acumulatedFee = _amountsToTransfer[i] * fee / MANTISSA;
+            acumulatedFee = acumulatedFee + _amountsToTransfer[i] * fee / MANTISSA;
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
         emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
         if(acumulatedFee > 0) {
-            TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, address(this), acumulatedFee);
+            TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, feeAddress, acumulatedFee);
         }
         emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
     }

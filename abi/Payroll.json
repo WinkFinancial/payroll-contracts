@@ -139,25 +139,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "_erc20TokenAddresses",
-        "type": "address[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256[]",
-        "name": "_amountsToTransfer",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "WithdrawFees",
-    "type": "event"
-  },
-  {
     "inputs": [],
     "name": "MANTISSA",
     "outputs": [
@@ -178,7 +159,7 @@
         "type": "address[]"
       }
     ],
-    "name": "approveToken",
+    "name": "approveTokens",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -273,11 +254,6 @@
             "type": "address"
           },
           {
-            "internalType": "uint256",
-            "name": "totalAmountToPay",
-            "type": "uint256"
-          },
-          {
             "internalType": "address[]",
             "name": "receivers",
             "type": "address[]"
@@ -348,11 +324,6 @@
             "internalType": "address",
             "name": "token",
             "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalAmountToPay",
-            "type": "uint256"
           },
           {
             "internalType": "address[]",
@@ -448,24 +419,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "_erc20TokenOrigin",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "_amountsToTransfer",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "withdrawFees",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
