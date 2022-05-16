@@ -210,7 +210,7 @@ describe('Contract: Payroll UniV2', () => {
         await expect(
           payroll
             .connect(payer)
-            .performSwapAndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 1, swaps, [])
+            .performSwapAndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 100, swaps, [])
         ).to.be.revertedWith('UniswapV2Router: EXPIRED');
       });
     });
