@@ -4,7 +4,7 @@ import {DeployFunction} from 'hardhat-deploy/types';
 const version = 'v0.2.0';
 const contractName = 'Payroll';
 
-const UNISWAP_V2_CHAINS = [56, 97];
+const UNISWAP_V3_CHAINS = [1, 3, 4, 5, 42]; // Ethereum and it's testnets
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
@@ -22,7 +22,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
     const {deployer, swapRouter} = await getNamedAccounts();
 
-    const isSwapV2 = UNISWAP_V2_CHAINS.indexOf(chainId) === -1 ? false : true;
+    const isSwapV2 = UNISWAP_V3_CHAINS.indexOf(chainId) === -1 ? true : false;
 
     const deployResult = await deploy(contractName, {
       from: deployer,
