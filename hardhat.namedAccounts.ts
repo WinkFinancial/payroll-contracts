@@ -19,7 +19,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   },
   dai: {
     97: '0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867',
-    56: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc36',
+    56: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3',
   },
   usdc: {
     97: '0x64544969ed7EBf5f083679233325356EbE738930',
