@@ -294,10 +294,61 @@
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
           },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint24",
+            "name": "poolFee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV2[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV2",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_erc20TokenOrigin",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
           {
             "internalType": "uint256",
             "name": "amountOut",
@@ -312,9 +363,14 @@
             "internalType": "uint24",
             "name": "poolFee",
             "type": "uint24"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
           }
         ],
-        "internalType": "struct Payroll.Swap[]",
+        "internalType": "struct Payroll.SwapV2[]",
         "name": "_swaps",
         "type": "tuple[]"
       },
@@ -341,7 +397,145 @@
         "type": "tuple[]"
       }
     ],
-    "name": "performSwapAndPayment",
+    "name": "performSwapV2AndPayment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_erc20TokenOrigin",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint24",
+            "name": "poolFee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV3[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV3",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_erc20TokenOrigin",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint24",
+            "name": "poolFee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV3[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address[]",
+            "name": "receivers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amountsToTransfer",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct Payroll.Payment[]",
+        "name": "_payments",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV3AndPayment",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -402,7 +596,7 @@
     "name": "swapRouter",
     "outputs": [
       {
-        "internalType": "contract IUniswapBasic",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
