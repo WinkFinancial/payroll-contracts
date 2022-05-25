@@ -23,6 +23,8 @@ import {
 
 import {Token, Pool, Payroll} from '../typechain-types';
 import {PaymentStruct, SwapV3Struct} from '../typechain-types/Payroll';
+import { getPath } from './helpers/uniswap';
+
 
 let router: Contract;
 let nftManager: Contract;
@@ -40,7 +42,7 @@ let feeAddress: SignerWithAddress;
 let deadline = 0;
 const poolFee = 3000;
 
-describe.only('Contract: Payroll UniV3', () => {
+describe('Contract: Payroll UniV3', () => {
   beforeEach(async () => {
     await network.provider.request({
       method: 'hardhat_reset',
@@ -123,9 +125,10 @@ describe.only('Contract: Payroll UniV3', () => {
     });
 
     it('should swap and transfer', async () => {
+
       const swaps: SwapV3Struct[] = [
-        {token: tokenA.address, amountOut: 200, amountInMax: 250, poolFee: poolFee, path: []},
-        {token: tokenC.address, amountOut: 200, amountInMax: 250, poolFee: poolFee, path: []},
+        {amountOut: 200, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        {amountOut: 200, amountInMax: 250, path: getPath(tokenC.address, poolFee, tokenB.address)},
       ];
 
       const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
@@ -166,8 +169,8 @@ describe.only('Contract: Payroll UniV3', () => {
 
     it('should only swap', async () => {
       const swaps: SwapV3Struct[] = [
-        {token: tokenA.address, amountOut: 100, amountInMax: 150, poolFee: poolFee, path: []},
-        {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: poolFee, path: []},
+        {amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        {amountOut: 100, amountInMax: 150, path: getPath(tokenC.address, poolFee, tokenB.address)},
       ];
 
       const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
@@ -230,7 +233,7 @@ describe.only('Contract: Payroll UniV3', () => {
       });
 
       it('should revert because amountInMax lower than expected to trade for amountOut', async () => {
-        const swaps: SwapV3Struct[] = [{token: tokenA.address, amountOut: 200, amountInMax: 100, poolFee: poolFee, path: []}];
+        const swaps: SwapV3Struct[] = [{ amountOut: 200, amountInMax: 100, path: getPath(tokenA.address, poolFee, tokenB.address)}];
 
         await expect(
           payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, [])
@@ -239,7 +242,7 @@ describe.only('Contract: Payroll UniV3', () => {
 
       it('should revert because token does not exists', async () => {
         const swaps: SwapV3Struct[] = [
-          {token: ethers.constants.AddressZero, amountOut: 200, amountInMax: 250, poolFee: poolFee, path: []},
+          { amountOut: 200, amountInMax: 250, path: getPath(ethers.constants.AddressZero, poolFee, tokenB.address)},
         ];
 
         await expect(payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, swaps, [])).to.be
@@ -247,7 +250,7 @@ describe.only('Contract: Payroll UniV3', () => {
       });
 
       it('should revert because amountOut 0', async () => {
-        const swaps: SwapV3Struct[] = [{token: tokenA.address, amountOut: 0, amountInMax: 250, poolFee: poolFee, path: []}];
+        const swaps: SwapV3Struct[] = [{amountOut: 0, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)}];
 
         await expect(
           payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, swaps, [])
@@ -255,7 +258,7 @@ describe.only('Contract: Payroll UniV3', () => {
       });
 
       it('should revert because of old deadline', async () => {
-        const swaps: SwapV3Struct[] = [{token: tokenA.address, amountOut: 200, amountInMax: 250, poolFee: poolFee, path: []}];
+        const swaps: SwapV3Struct[] = [{amountOut: 200, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)}];
 
         await expect(
           payroll
@@ -274,8 +277,8 @@ describe.only('Contract: Payroll UniV3', () => {
       it('should swap and transfer with fees activated', async () => {
         const swaps: SwapV3Struct[] = [
           // Add 1% fee to amountOut
-          {token: tokenA.address, amountOut: 202, amountInMax: 250, poolFee: '3000', path: []},
-          {token: tokenC.address, amountOut: 202, amountInMax: 250, poolFee: '3000', path: []},
+          { amountOut: 202, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+          { amountOut: 202, amountInMax: 250, path: getPath(tokenC.address, poolFee, tokenB.address)},
         ];
 
         const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
@@ -316,8 +319,8 @@ describe.only('Contract: Payroll UniV3', () => {
 
       it('should only swap  with fees activated', async () => {
         const swaps: SwapV3Struct[] = [
-          {token: tokenA.address, amountOut: 100, amountInMax: 150, poolFee: '3000', path: []},
-          {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000', path: []},
+          {amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenB.address)},
+          {amountOut: 100, amountInMax: 150, path: getPath(tokenC.address, poolFee, tokenB.address)},
         ];
 
         const previousBalanceTokenA = await tokenA.balanceOf(payer.address);

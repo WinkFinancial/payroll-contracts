@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./interfaces/IERC20Basic.sol";
 import "./interfaces/IUniswap.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "./BytesLib.sol";
 
 /**
  * @title Think and Dev Paymentbox
@@ -17,6 +18,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * Use any router address of any DEX that uses Uniswap protocol v2 or v3 to make swaps.
  */
 contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+    using BytesLib for bytes;
     /**
      * Returns the address of the Uniswap protocol router, it could be v2 or v3.
      */
@@ -40,15 +42,12 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     struct SwapV2 {
         uint256 amountOut;
         uint256 amountInMax;
-        uint24 poolFee;
         address[] path;
     }
 
     struct SwapV3 {
-        address token;
         uint256 amountOut;
         uint256 amountInMax;
-        uint24 poolFee;
         bytes path;
     }
 
@@ -132,7 +131,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Perform the swap and the transfer to the given addresses.
+     * Perform the swap with Uniswap V3 and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
@@ -155,19 +154,26 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         _performMultiPayment(_payments);
     }
 
-
+    /**
+     * Perform the swap with Uniswap V3 to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     */
     function performSwapV3(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external returns(uint256) {
-         require(!isSwapV2, "Payroll: Not uniswapV3");
+    ) external nonReentrant returns(uint256) {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
     }
 
     /**
-     * Perform the swap to the given token addresses and amounts.
+     * Perform the swap with Uniswap V3 to the given token addresses and amounts.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
@@ -185,6 +191,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
         uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
             uint256 amountIn = IUniswapV3(swapRouter).exactOutput(
                 IUniswapV3.ExactOutputParams({
                     path: _swaps[i].path,
@@ -195,7 +202,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                 })
             );
             totalAmountIn = totalAmountIn + amountIn;
-            emit SwapFinished(_erc20TokenOrigin, _swaps[i].token, amountIn);
+            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path.toAddress(0), amountIn);
         }
 
         uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
@@ -206,9 +213,21 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         return totalAmountIn;
     }
 
+    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
+        require(_start + 20 >= _start, "toAddress_overflow");
+        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
+        }
+
+        return tempAddress;
+    }
+
 
         /**
-     * Perform the swap and the transfer to the given addresses using Uniswap V2 interface.
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
@@ -231,18 +250,26 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         _performMultiPayment(_payments);
     }
 
+    /**
+     * Perform the swap with Uniswap V2 to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     */
     function performSwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external returns(uint256) {
-         require(isSwapV2, "Payroll: Not uniswapV2");
+    ) external nonReentrant returns(uint256) {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
     }
 
     /**
-     * Perform the swap to the given token addresses and amounts.
+     * Perform the swap with Uniswap V2 to the given token addresses and amounts.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
@@ -260,6 +287,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
         uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
             require(_swaps[i].path[0] == _erc20TokenOrigin, "Payroll: Swap not token origin");
             // return the amount spend of tokenIn
             uint256 amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(_swaps[i].amountOut, _swaps[i].amountInMax, _swaps[i].path, msg.sender, _deadline)[

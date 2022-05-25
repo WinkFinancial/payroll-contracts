@@ -304,11 +304,6 @@
             "type": "uint256"
           },
           {
-            "internalType": "uint24",
-            "name": "poolFee",
-            "type": "uint24"
-          },
-          {
             "internalType": "address[]",
             "name": "path",
             "type": "address[]"
@@ -358,11 +353,6 @@
             "internalType": "uint256",
             "name": "amountInMax",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint24",
-            "name": "poolFee",
-            "type": "uint24"
           },
           {
             "internalType": "address[]",
@@ -422,11 +412,6 @@
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "amountOut",
             "type": "uint256"
@@ -435,11 +420,6 @@
             "internalType": "uint256",
             "name": "amountInMax",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint24",
-            "name": "poolFee",
-            "type": "uint24"
           },
           {
             "internalType": "bytes",
@@ -483,11 +463,6 @@
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "amountOut",
             "type": "uint256"
@@ -496,11 +471,6 @@
             "internalType": "uint256",
             "name": "amountInMax",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint24",
-            "name": "poolFee",
-            "type": "uint24"
           },
           {
             "internalType": "bytes",
