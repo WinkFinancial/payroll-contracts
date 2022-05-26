@@ -20,6 +20,13 @@ export interface DeployResult {
   uniswapV2Router02: Contract;
 }
 
+export const getPath = (fromToken: string, poolFee: number, toToken: string) => {
+  // https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps#calling-the-function
+  // abi.encodePacked(toToken, poolFee, fromToken)
+  const path = ethers.utils.solidityPack(['address', 'uint24', 'address'], [fromToken, poolFee, toToken]);
+  return path;
+};
+
 export const deploy = async ({owner}: {owner: Signer}) => {
   WETH = await deployContract(owner, WETHContract);
   uniswapV2Factory = await deployContract(owner, UniswapV2FactoryContract, [await owner.getAddress()]);

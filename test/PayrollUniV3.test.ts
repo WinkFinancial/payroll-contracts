@@ -22,7 +22,8 @@ import {
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 
 import {Token, Pool, Payroll} from '../typechain-types';
-import {PaymentStruct, SwapStruct} from '../typechain-types/Payroll';
+import {PaymentStruct, SwapV3Struct} from '../typechain-types/Payroll';
+import {getPath} from './helpers/uniswap';
 
 let router: Contract;
 let nftManager: Contract;
@@ -123,9 +124,9 @@ describe('Contract: Payroll UniV3', () => {
     });
 
     it('should swap and transfer', async () => {
-      const swaps: SwapStruct[] = [
-        {token: tokenA.address, amountOut: 200, amountInMax: 250, poolFee: poolFee},
-        {token: tokenC.address, amountOut: 200, amountInMax: 250, poolFee: poolFee},
+      const swaps: SwapV3Struct[] = [
+        {amountOut: 200, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        {amountOut: 200, amountInMax: 250, path: getPath(tokenC.address, poolFee, tokenB.address)},
       ];
 
       const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
@@ -148,7 +149,7 @@ describe('Contract: Payroll UniV3', () => {
         },
       ];
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 500, deadline, swaps, payments);
+      await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, payments);
 
       const newBalanceTokenB = await tokenB.balanceOf(payer.address);
 
@@ -165,16 +166,16 @@ describe('Contract: Payroll UniV3', () => {
     });
 
     it('should only swap', async () => {
-      const swaps: SwapStruct[] = [
-        {token: tokenA.address, amountOut: 100, amountInMax: 150, poolFee: poolFee},
-        {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: poolFee},
+      const swaps: SwapV3Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        {amountOut: 100, amountInMax: 150, path: getPath(tokenC.address, poolFee, tokenB.address)},
       ];
 
       const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
       const previousBalanceTokenC = await tokenC.balanceOf(payer.address);
       const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 300, deadline, swaps, []);
+      await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 300, deadline, swaps, []);
 
       const newBalanceTokenA = await tokenA.balanceOf(payer.address);
       const newBalanceTokenC = await tokenC.balanceOf(payer.address);
@@ -194,7 +195,7 @@ describe('Contract: Payroll UniV3', () => {
         },
       ];
 
-      await payroll.connect(payer).performSwapAndPayment(tokenB.address, 100, deadline, [], payments);
+      await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 100, deadline, [], payments);
 
       expect(await tokenB.balanceOf(userA.address)).to.equal(50);
       expect(await tokenB.balanceOf(userB.address)).to.equal(50);
@@ -211,7 +212,7 @@ describe('Contract: Payroll UniV3', () => {
         ];
 
         await expect(
-          payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+          payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, [], payments)
         ).to.be.revertedWith('Payroll: Arrays must have same length');
       });
 
@@ -225,42 +226,48 @@ describe('Contract: Payroll UniV3', () => {
         ];
 
         await expect(
-          payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments)
+          payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, [], payments)
         ).to.be.revertedWith('Payroll: Cannot send to a 0 address');
       });
 
       it('should revert because amountInMax lower than expected to trade for amountOut', async () => {
-        const swaps: SwapStruct[] = [{token: tokenA.address, amountOut: 200, amountInMax: 100, poolFee: poolFee}];
+        const swaps: SwapV3Struct[] = [
+          {amountOut: 200, amountInMax: 100, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        ];
 
         await expect(
-          payroll.connect(payer).performSwapAndPayment(tokenB.address, 500, deadline, swaps, [])
+          payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, [])
         ).to.be.revertedWith('Too much requested');
       });
 
       it('should revert because token does not exists', async () => {
-        const swaps: SwapStruct[] = [
-          {token: ethers.constants.AddressZero, amountOut: 200, amountInMax: 250, poolFee: poolFee},
+        const swaps: SwapV3Struct[] = [
+          {amountOut: 200, amountInMax: 250, path: getPath(ethers.constants.AddressZero, poolFee, tokenB.address)},
         ];
 
-        await expect(payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, [])).to.be
+        await expect(payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, swaps, [])).to.be
           .reverted;
       });
 
       it('should revert because amountOut 0', async () => {
-        const swaps: SwapStruct[] = [{token: tokenA.address, amountOut: 0, amountInMax: 250, poolFee: poolFee}];
+        const swaps: SwapV3Struct[] = [
+          {amountOut: 0, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        ];
 
         await expect(
-          payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, [])
+          payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, swaps, [])
         ).to.be.revertedWith('AS');
       });
 
       it('should revert because of old deadline', async () => {
-        const swaps: SwapStruct[] = [{token: tokenA.address, amountOut: 200, amountInMax: 250, poolFee: poolFee}];
+        const swaps: SwapV3Struct[] = [
+          {amountOut: 200, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+        ];
 
         await expect(
           payroll
             .connect(payer)
-            .performSwapAndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 100, swaps, [])
+            .performSwapV3AndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 100, swaps, [])
         ).to.be.revertedWith('Transaction too old');
       });
     });
@@ -272,10 +279,10 @@ describe('Contract: Payroll UniV3', () => {
       });
 
       it('should swap and transfer with fees activated', async () => {
-        const swaps: SwapStruct[] = [
+        const swaps: SwapV3Struct[] = [
           // Add 1% fee to amountOut
-          {token: tokenA.address, amountOut: 202, amountInMax: 250, poolFee: '3000'},
-          {token: tokenC.address, amountOut: 202, amountInMax: 250, poolFee: '3000'},
+          {amountOut: 202, amountInMax: 250, path: getPath(tokenA.address, poolFee, tokenB.address)},
+          {amountOut: 202, amountInMax: 250, path: getPath(tokenC.address, poolFee, tokenB.address)},
         ];
 
         const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
@@ -298,7 +305,7 @@ describe('Contract: Payroll UniV3', () => {
           },
         ];
 
-        await payroll.connect(payer).performSwapAndPayment(tokenB.address, 500, deadline, swaps, payments);
+        await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, payments);
 
         const newBalanceTokenB = await tokenB.balanceOf(payer.address);
 
@@ -315,16 +322,16 @@ describe('Contract: Payroll UniV3', () => {
       });
 
       it('should only swap  with fees activated', async () => {
-        const swaps: SwapStruct[] = [
-          {token: tokenA.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
-          {token: tokenC.address, amountOut: 100, amountInMax: 150, poolFee: '3000'},
+        const swaps: SwapV3Struct[] = [
+          {amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenB.address)},
+          {amountOut: 100, amountInMax: 150, path: getPath(tokenC.address, poolFee, tokenB.address)},
         ];
 
         const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
         const previousBalanceTokenC = await tokenC.balanceOf(payer.address);
         const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
 
-        await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, swaps, []);
+        await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, swaps, []);
 
         const newBalanceTokenA = await tokenA.balanceOf(payer.address);
         const newBalanceTokenC = await tokenC.balanceOf(payer.address);
@@ -346,7 +353,7 @@ describe('Contract: Payroll UniV3', () => {
           },
         ];
 
-        await payroll.connect(payer).performSwapAndPayment(tokenB.address, 1000, deadline, [], payments);
+        await payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 1000, deadline, [], payments);
         const newBalanceTokenB = await tokenB.balanceOf(payer.address);
 
         expect(await tokenB.balanceOf(userA.address)).to.equal(500);

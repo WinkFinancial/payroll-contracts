@@ -14,13 +14,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
+    console.log(`Approving ${contractName} ${version}`);
     const {deployments, getNamedAccounts, network, ethers} = hre;
 
     if (network.live) {
-      const {dai, usdc, usdt, busd, btcb, eth, xrp} = await getNamedAccounts();
+      const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI} = await getNamedAccounts();
+      const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI];
+      const tokensToApprove = tokens.filter((x) => !!x);
+
       const Payroll = await deployments.get('Payroll');
       const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
-      await instance.approveTokens([dai, usdc, usdt, busd, btcb, eth, xrp]);
+      await instance.approveTokens(tokensToApprove);
       console.log('Approved Tokens');
     }
 
@@ -38,5 +42,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const id = contractName + action + version;
 
 export default func;
-func.tags = [contractName, action, version];
+func.tags = [contractName + action, version];
 func.id = id;
+func.dependencies = [contractName];

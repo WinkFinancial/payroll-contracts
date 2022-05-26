@@ -7,8 +7,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IERC20Basic.sol";
-import "./interfaces/IUniswapBasic.sol";
+import "./interfaces/IUniswap.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "./BytesLib.sol";
 
 /**
  * @title Think and Dev Paymentbox
@@ -17,10 +18,11 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * Use any router address of any DEX that uses Uniswap protocol v2 or v3 to make swaps.
  */
 contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+    using BytesLib for bytes;
     /**
      * Returns the address of the Uniswap protocol router, it could be v2 or v3.
      */
-    IUniswapBasic public swapRouter;
+    address public swapRouter;
     address public feeAddress;
     uint256 public fee;
     uint256 public constant MANTISSA = 1e18;
@@ -37,11 +39,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256[] amountsToTransfer;
     }
 
-    struct Swap {
-        address token;
+    struct SwapV2 {
         uint256 amountOut;
         uint256 amountInMax;
-        uint24 poolFee;
+        address[] path;
+    }
+
+    struct SwapV3 {
+        uint256 amountOut;
+        uint256 amountInMax;
+        bytes path;
     }
 
     event SwapRouterChanged(address _swapRouter, bool _isSwapV2);
@@ -108,7 +115,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     function _setSwapRouter(address _swapRouter, bool _isSwapV2) internal {
         require(_swapRouter != address(0), "Payroll: Cannot set a 0 address as swapRouter");
         isSwapV2 = _isSwapV2;
-        swapRouter = IUniswapBasic(_swapRouter);
+        swapRouter = _swapRouter;
         emit SwapRouterChanged(_swapRouter, _isSwapV2);
     }
 
@@ -124,7 +131,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Perform the swap and the transfer to the given addresses.
+     * Perform the swap with Uniswap V3 and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
@@ -132,126 +139,173 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _payments The array of the Payment data.
      * @notice Currently the function only works with ERC20 tokens.
      */
-    function performSwapAndPayment(
+    function performSwapV3AndPayment(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
-        Swap[] calldata _swaps,
+        SwapV3[] calldata _swaps,
         Payment[] calldata _payments
     ) external nonReentrant {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
         if (_swaps.length > 0) {
-            _performSwap(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+            _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
         }
 
         _performMultiPayment(_payments);
     }
 
     /**
-     * Perform the swap to the given token addresses and amounts.
+     * Perform the swap with Uniswap V3 to the given token addresses and amounts.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      */
-    function _performSwap(
+    function performSwapV3(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
-        Swap[] calldata _swaps
-    ) internal {
+        SwapV3[] calldata _swaps
+    ) external nonReentrant returns (uint256) {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
+        return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+    }
+
+    /**
+     * Perform the swap with Uniswap V3 to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     */
+    function _performSwapV3(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV3[] calldata _swaps
+    ) internal returns (uint256) {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
 
-        // determines which version of uniswap protocol will be used to perform the swap
-        if (isSwapV2) {
-            for (uint256 i = 0; i < _swaps.length; i++) {
-                _swapTokensForExactTokens(
-                    _erc20TokenOrigin,
-                    _swaps[i].token,
-                    _swaps[i].amountOut,
-                    _swaps[i].amountInMax,
-                    _deadline
-                );
-            }
-        } else {
-            for (uint256 i = 0; i < _swaps.length; i++) {
-                _swapExactOutputSingle(
-                    _erc20TokenOrigin,
-                    _swaps[i].token,
-                    _swaps[i].poolFee,
-                    _swaps[i].amountOut,
-                    _swaps[i].amountInMax,
-                    _deadline
-                );
-            }
+        uint256 totalAmountIn = 0;
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            uint256 amountIn = IUniswapV3(swapRouter).exactOutput(
+                IUniswapV3.ExactOutputParams({
+                    path: _swaps[i].path,
+                    recipient: msg.sender,
+                    deadline: _deadline,
+                    amountOut: _swaps[i].amountOut,
+                    amountInMaximum: _swaps[i].amountInMax
+                })
+            );
+            totalAmountIn = totalAmountIn + amountIn;
+            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path.toAddress(0), amountIn);
         }
+
         uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
         if (leftOver > 0) {
             // return the leftover of _erc20TokenOrigin
             TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
         }
+        return totalAmountIn;
+    }
+
+    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
+        require(_start + 20 >= _start, "toAddress_overflow");
+        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
+        }
+
+        return tempAddress;
     }
 
     /**
-     * Perform ERC20 tokens swap using UniSwap v2 protocol.
-     * @param _tokenIn ERC20 token address to swap for another.
-     * @param _tokenOut ERC20 token address to receive.
-     * @param _amountOut Exact amount of tokenOut to receive.
-     * @param _amountInMax Max amount of tokenIn to pay.
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     * @param _payments The array of the Payment data.
+     * @notice Currently the function only works with ERC20 tokens.
      */
-    function _swapTokensForExactTokens(
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _amountOut,
-        uint256 _amountInMax,
-        uint32 _deadline
-    ) internal {
-        address[] memory path = new address[](2);
-        path[0] = _tokenIn;
-        path[1] = _tokenOut;
+    function performSwapV2AndPayment(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps,
+        Payment[] calldata _payments
+    ) external nonReentrant {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        if (_swaps.length > 0) {
+            _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        }
 
-        // return the amount spend of tokenIn
-        uint256 amountIn = swapRouter.swapTokensForExactTokens(_amountOut, _amountInMax, path, msg.sender, _deadline)[
-            0
-        ];
-        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+        _performMultiPayment(_payments);
     }
 
     /**
-     * Perform ERC20 tokens swap using UniSwap v3 protocol.
-     * @param _tokenIn ERC20 token address to swap for another.
-     * @param _tokenOut ERC20 token address to receive.
-     * @param _poolFee Pool fee tokenIn/tokenOut.
-     * @param _amountOut Exact amount of tokenOut to receive.
-     * @param _amountInMax Max amount of tokenIn to pay.
+     * Perform the swap with Uniswap V2 to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
-     * @notice Currently the function only works with single pools tokenIn/tokenOut.
+     * @param _swaps The array of the Swaps data.
      */
-    function _swapExactOutputSingle(
-        address _tokenIn,
-        address _tokenOut,
-        uint24 _poolFee,
-        uint256 _amountOut,
-        uint256 _amountInMax,
-        uint32 _deadline
-    ) internal {
-        // return the amount spend of tokenIn
-        uint256 amountIn = swapRouter.exactOutputSingle(
-            IUniswapBasic.ExactOutputSingleParams({
-                tokenIn: _tokenIn,
-                tokenOut: _tokenOut,
-                fee: _poolFee,
-                recipient: msg.sender,
-                deadline: _deadline,
-                amountOut: _amountOut,
-                amountInMaximum: _amountInMax,
-                sqrtPriceLimitX96: 0
-            })
-        );
+    function performSwapV2(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps
+    ) external nonReentrant returns (uint256) {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
+        return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+    }
 
-        emit SwapFinished(_tokenIn, _tokenOut, amountIn);
+    /**
+     * Perform the swap with Uniswap V2 to the given token addresses and amounts.
+     * @param _erc20TokenOrigin ERC20 token address to swap for another.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     */
+    function _performSwapV2(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps
+    ) internal returns (uint256) {
+        // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
+        // msg.sender must approve this contract for erc20TokenOrigin
+        TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
+
+        uint256 totalAmountIn = 0;
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            require(_swaps[i].path[0] == _erc20TokenOrigin, "Payroll: Swap not token origin");
+            // return the amount spend of tokenIn
+            uint256 amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(
+                _swaps[i].amountOut,
+                _swaps[i].amountInMax,
+                _swaps[i].path,
+                msg.sender,
+                _deadline
+            )[0];
+            totalAmountIn = totalAmountIn + amountIn;
+            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps.length - 1], amountIn);
+        }
+
+        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+        if (leftOver > 0) {
+            // return the leftover of _erc20TokenOrigin
+            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+        }
+        return totalAmountIn;
     }
 
     /**
