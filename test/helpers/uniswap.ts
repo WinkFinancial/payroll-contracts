@@ -6,7 +6,6 @@ import {deployContract} from 'ethereum-waffle';
 import {BigNumber, Contract, Signer} from 'ethers';
 import {ethers} from 'hardhat';
 
-
 let WETH: Contract, uniswapV2Factory: Contract, uniswapV2Router02: Contract;
 
 export const getWETH = () => WETH;
@@ -22,12 +21,11 @@ export interface DeployResult {
 }
 
 export const getPath = (fromToken: string, poolFee: number, toToken: string) => {
-
-   // https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps#calling-the-function
-   // abi.encodePacked(toToken, poolFee, fromToken)
-   const path = ethers.utils.solidityPack(["address", "uint24", "address"], [fromToken, poolFee, toToken])
+  // https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps#calling-the-function
+  // abi.encodePacked(toToken, poolFee, fromToken)
+  const path = ethers.utils.solidityPack(['address', 'uint24', 'address'], [fromToken, poolFee, toToken]);
   return path;
-}
+};
 
 export const deploy = async ({owner}: {owner: Signer}) => {
   WETH = await deployContract(owner, WETHContract);

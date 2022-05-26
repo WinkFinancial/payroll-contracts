@@ -15,7 +15,6 @@ interface IUniswapV2 {
         address to,
         uint256 deadline
     ) external returns (uint256[] memory amounts);
-
 }
 
 /**
@@ -23,7 +22,6 @@ interface IUniswapV2 {
  * @dev Simpler version of Uniswap v2 and v3 protocol interface
  */
 interface IUniswapV3 {
-
     //UniswapV3
     struct ExactOutputSingleParams {
         address tokenIn;
@@ -54,4 +52,3 @@ interface IUniswapV3 {
     /// @return amountIn The amount of the input token
     function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
 }
-

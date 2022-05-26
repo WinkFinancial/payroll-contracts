@@ -90,8 +90,8 @@ describe('Contract: Payroll UniV2', () => {
 
     it('should swap and transfer', async () => {
       const swaps: SwapV2Struct[] = [
-        { amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenA.address]},
-        { amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenC.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenA.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenC.address]},
       ];
 
       const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
@@ -181,7 +181,7 @@ describe('Contract: Payroll UniV2', () => {
 
       it('should revert because token does not exists', async () => {
         const swaps: SwapV2Struct[] = [
-          { amountOut: 200, amountInMax: 250, path: [ethers.constants.AddressZero, tokenA.address]},
+          {amountOut: 200, amountInMax: 250, path: [ethers.constants.AddressZero, tokenA.address]},
         ];
 
         await expect(payroll.connect(payer).performSwapV2AndPayment(tokenB.address, 1000, deadline, swaps, [])).to.be

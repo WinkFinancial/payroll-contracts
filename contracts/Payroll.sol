@@ -166,7 +166,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external nonReentrant returns(uint256) {
+    ) external nonReentrant returns (uint256) {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -184,7 +184,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) internal returns(uint256) {
+    ) internal returns (uint256) {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
@@ -225,8 +225,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         return tempAddress;
     }
 
-
-        /**
+    /**
      * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
@@ -262,7 +261,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external nonReentrant returns(uint256) {
+    ) external nonReentrant returns (uint256) {
         require(isSwapV2, "Payroll: Not uniswapV2");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -280,7 +279,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) internal returns(uint256) {
+    ) internal returns (uint256) {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
@@ -290,11 +289,15 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
             require(_swaps[i].path[0] == _erc20TokenOrigin, "Payroll: Swap not token origin");
             // return the amount spend of tokenIn
-            uint256 amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(_swaps[i].amountOut, _swaps[i].amountInMax, _swaps[i].path, msg.sender, _deadline)[
-                0
-            ];
+            uint256 amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(
+                _swaps[i].amountOut,
+                _swaps[i].amountInMax,
+                _swaps[i].path,
+                msg.sender,
+                _deadline
+            )[0];
             totalAmountIn = totalAmountIn + amountIn;
-            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps.length-1], amountIn);
+            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps.length - 1], amountIn);
         }
 
         uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
@@ -304,8 +307,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
         return totalAmountIn;
     }
-
-
 
     /**
      * Perform the payments to the given addresses and amounts, public method.
