@@ -7,9 +7,14 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   deployer: {
     default: 0, // here this will by default take the first account as deployer
   },
+  feeAddress: {
+    default: 0, // here this will by default take the first account as fee Address
+  },
   proxyOwner: {
     default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
     // 1: '0x0', // on the mainnet the feeCollector could be a multi sig
+    4: 0, // For testnet use first account
+    97: 0, // For testnet use first account
   },
   swapRouter: {
     default: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -45,6 +50,18 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   xrp: {
     97: '0xa83575490d7df4e2f47b7d38ef351a2722ca45b9',
     56: '0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE',
+  },
+  jUSDT: {
+    4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
+    97: '0x863C2c19208aC736324e438DF9a49F39c3dbA843',
+  },
+  jWBTC: {
+    4: '0x879947a97a662E8294aFD601a901383D7731484e',
+    97: '0xCbBbdc113F480a83050C7Cd2420E100Cf6305858',
+  },
+  jDAI: {
+    4: '0x659b25Cbf47128BF952EFB97f27b0821F169A1E5',
+    97: '0xD2E96745ddd7c6641866C9335909AeC605eF07A4',
   },
 };
 
