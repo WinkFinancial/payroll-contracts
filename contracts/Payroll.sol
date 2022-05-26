@@ -26,6 +26,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     address public feeAddress;
     uint256 public fee;
     uint256 public constant MANTISSA = 1e18;
+    uint256 public version;
 
     /**
      * Returns if the contract is working with a v2 Uniswap protocol;
@@ -53,6 +54,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
     event SwapRouterChanged(address _swapRouter, bool _isSwapV2);
     event FeeChanged(uint256 _fee);
+    event UpdatedVersion(uint256 _version);
     event FeeCharged(address _erc20TokenAddress, address _feeAddress, uint256 _fees);
     event FeeAddressChanged(address _feeAddress);
     event BatchPaymentFinished(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
@@ -73,6 +75,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         _setSwapRouter(_swapRouter, _isSwapV2);
         _setFeeAddress(_feeAddress);
         _setFee(_fee);
+        _setVersion(1);
     }
 
     /**
@@ -81,6 +84,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      */
     function setFee(uint256 _fee) external onlyOwner {
         _setFee(_fee);
+    }
+
+    function setVersion(uint256 _version) external onlyOwner {
+        _setVersion(_version);
+    }
+
+    function _setVersion(uint256 _version) internal {
+        require(_version > 0, "Payroll: Version can't be 0");
+        version = _version;
+        emit UpdatedVersion(_version);
     }
 
     function _setFee(uint256 _fee) internal {
