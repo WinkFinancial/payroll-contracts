@@ -35,3 +35,6 @@ jobs:
 
       - name: Run Unit test
         run: yarn test
+
+      - name: Run local deploy
+        run: yarn deploy hardhat

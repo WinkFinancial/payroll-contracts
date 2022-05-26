@@ -53,7 +53,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           });
         } catch (err: any) {
           if (err.message.includes('Already Verified')) {
-            return
+            return;
           } else {
             throw err;
           }
