@@ -12,8 +12,9 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   },
   proxyOwner: {
     default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
-    // 1: '0x0', // on the mainnet the feeCollector could be a multi sig
+    1: 0,
     4: 0, // For testnet use first account
+    56: 0,
     97: 0, // For testnet use first account
   },
   swapRouter: {
@@ -24,14 +25,17 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     97: '0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1', // apeswap v2 or 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 https://pancake.kiemtienonline360.com/
   },
   dai: {
+    1: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
     97: '0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867',
     56: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3',
   },
   usdc: {
+    1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     97: '0x64544969ed7EBf5f083679233325356EbE738930',
     56: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
   },
   usdt: {
+    1: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     97: '0x337610d27c682e347c9cd60bd4b3b107c9d34ddd',
     56: '0x55d398326f99059fF775485246999027B3197955',
   },
