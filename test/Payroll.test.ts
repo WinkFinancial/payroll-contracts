@@ -1,7 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 import {expect} from 'chai';
-import {Contract, BigNumber} from 'ethers';
+import {Contract} from 'ethers';
 import {deploy, DeployResult} from './helpers/uniswap';
 
 import {Token, Payroll} from '../typechain-types';
@@ -94,7 +94,7 @@ describe('Contract: Payroll', () => {
     });
 
     it('Should set fee', async () => {
-      const fee = BigNumber.from(100000);
+      const fee = ethers.utils.parseUnits('0.01', 'ether');
       await payroll.setFee(fee);
       expect(await payroll.fee()).to.be.equal(fee);
     });
