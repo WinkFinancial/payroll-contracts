@@ -19,7 +19,10 @@
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
-    "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy"
+    "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy",
+    "decodeTx": "hardhat run scripts/decodeTxParams.ts",
+    "replayTx": "hardhat run scripts/replayTx.ts --network bsc",
+    "callStatic": "hardhat run scripts/contractCallStatic.ts --network bsc"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.12",
