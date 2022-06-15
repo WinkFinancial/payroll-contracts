@@ -22,7 +22,8 @@ if (forkEnabled) {
     live: false,
     chainId: 1,
     forking: {
-      url: alchemyUrl,
+      url: 'https://speedy-nodes-nyc.moralis.io/59763aa3a28a9cb1ae270998/bsc/mainnet/archive',
+      blockNumber: 18317009
     },
     accounts: {
       mnemonic,
