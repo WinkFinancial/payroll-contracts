@@ -1,7 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 import {expect} from 'chai';
-import {Contract} from 'ethers';
+import {Contract, FixedNumber} from 'ethers';
 import {deploy, DeployResult} from './helpers/uniswap';
 
 import {Token, Payroll} from '../typechain-types';
@@ -160,20 +160,6 @@ describe('Contract: Payroll', () => {
       );
     });
 
-    it('should revert because token address is zero', async () => {
-      const payments: PaymentStruct[] = [
-        {
-          token: ethers.constants.AddressZero,
-          receivers: [userA.address, userB.address],
-          amountsToTransfer: [50, 50],
-        },
-      ];
-
-      await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
-        'Payroll: Token is 0 address'
-      );
-    });
-
     it('should revert because one receiver is a zero address', async () => {
       const payments: PaymentStruct[] = [
         {
@@ -185,6 +171,47 @@ describe('Contract: Payroll', () => {
 
       await expect(payroll.connect(payer).performMultiPayment(payments)).to.be.revertedWith(
         'Payroll: Cannot send to a 0 address'
+      );
+    });
+
+    it('should transfer ETH and ERC20', async () => {
+      const previousUserABalanceETH = await ethers.provider.getBalance(userA.address);
+      const previousUserBBalanceETH = await ethers.provider.getBalance(userB.address);
+      const previousPayerBalanceETH = await ethers.provider.getBalance(payer.address);
+      const previousBalanceTokenB = await tokenB.balanceOf(payer.address);
+
+      const ethAmountToReceive = ethers.utils.parseEther('50.0');
+      const ethAmountToPay = ethers.utils.parseEther('150.0');
+
+      const payments: PaymentStruct[] = [
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [ethAmountToReceive, ethAmountToReceive],
+        },
+        {
+          token: tokenB.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      await payroll.connect(payer).performMultiPayment(payments, {value: ethAmountToPay});
+
+      const newBalanceTokenB = await tokenB.balanceOf(payer.address);
+
+      expect(await tokenB.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(50);
+      expect(previousBalanceTokenB.sub(newBalanceTokenB)).to.be.equal(100);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousUserABalanceETH.add(ethAmountToReceive));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousUserBBalanceETH.add(ethAmountToReceive));
+
+      // sent 150 to contract, expect leftover was returned
+      const payerETHFixedBalance = FixedNumber.fromValue(await ethers.provider.getBalance(payer.address), 18).round();
+      const previousPayerETHFixedBalance = FixedNumber.fromValue(previousPayerBalanceETH, 18).round();
+      expect(previousPayerETHFixedBalance.subUnsafe(FixedNumber.fromString('100.0')).toString()).to.equal(
+        payerETHFixedBalance.toString()
       );
     });
   });

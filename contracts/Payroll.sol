@@ -325,7 +325,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * Perform the payments to the given addresses and amounts, public method.
      * @param _payments The array of the Payment data.
      */
-    function performMultiPayment(Payment[] calldata _payments) external nonReentrant {
+    function performMultiPayment(Payment[] calldata _payments) external payable nonReentrant {
         _performMultiPayment(_payments);
     }
 
@@ -335,7 +335,22 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      */
     function _performMultiPayment(Payment[] calldata _payments) internal {
         for (uint256 i = 0; i < _payments.length; i++) {
-            _performPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
+            require(_payments[i].amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
+            require(
+                _payments[i].amountsToTransfer.length == _payments[i].receivers.length,
+                "Payroll: Arrays must have same length"
+            );
+
+            if (_payments[i].token != address(0)) {
+                _performERC20Payment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
+            } else {
+                _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
+                uint256 leftOver = address(this).balance;
+                if (leftOver > 0) {
+                    (bool success, ) = payable(msg.sender).call{value: leftOver}("");
+                    require(success, "Payroll: ETH leftOver transfer failed");
+                }
+            }
         }
     }
 
@@ -346,15 +361,11 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _amountsToTransfer The array of payments' amounts to perform.
      * The amount will be transfered to the address on _receivers with the same index.
      */
-    function _performPayment(
+    function _performERC20Payment(
         address _erc20TokenAddress,
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
     ) internal {
-        require(_erc20TokenAddress != address(0), "Payroll: Token is 0 address");
-        require(_amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
-        require(_amountsToTransfer.length == _receivers.length, "Payroll: Arrays must have same length");
-
         uint256 acumulatedFee = 0;
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
@@ -364,6 +375,33 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
         if (acumulatedFee > 0) {
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, feeAddress, acumulatedFee);
+        }
+        emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
+    }
+
+    /**
+     * Performs the payment to the given addresses.
+     * @param _receivers The array of payment receivers.
+     * @param _amountsToTransfer The array of payments' amounts to perform.
+     * The amount will be transfered to the address on _receivers with the same index.
+     */
+    function _performETHPayment(
+        address _erc20TokenAddress,
+        address[] calldata _receivers,
+        uint256[] calldata _amountsToTransfer
+    ) internal {
+        uint256 acumulatedFee = 0;
+        for (uint256 i = 0; i < _receivers.length; i++) {
+            require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
+            acumulatedFee = acumulatedFee + (_amountsToTransfer[i] * fee) / MANTISSA;
+
+            (bool success, ) = payable(_receivers[i]).call{value: _amountsToTransfer[i]}("");
+            require(success, "Payroll: ETH transfer failed");
+        }
+        emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
+        if (acumulatedFee > 0) {
+            (bool success, ) = payable(feeAddress).call{value: acumulatedFee}("");
+            require(success, "Payroll: ETH fee transfer failed");
         }
         emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
     }
