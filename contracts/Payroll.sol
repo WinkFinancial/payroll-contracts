@@ -355,7 +355,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Performs the payment to the given addresses.
+     * Performs the ERC20 payment to the given addresses.
      * @param _erc20TokenAddress The address of the ERC20 token to transfer.
      * @param _receivers The array of payment receivers.
      * @param _amountsToTransfer The array of payments' amounts to perform.
@@ -380,7 +380,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Performs the payment to the given addresses.
+     * Performs the ETH payment to the given addresses.
      * @param _receivers The array of payment receivers.
      * @param _amountsToTransfer The array of payments' amounts to perform.
      * The amount will be transfered to the address on _receivers with the same index.

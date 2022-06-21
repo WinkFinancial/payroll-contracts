@@ -214,5 +214,42 @@ describe('Contract: Payroll', () => {
         payerETHFixedBalance.toString()
       );
     });
+
+    it('should revert for not sending enough ETH', async () => {
+      const ethAmountToReceive = ethers.utils.parseEther('50.0');
+      const ethAmountToPay = ethers.utils.parseEther('10.0');
+
+      const payments: PaymentStruct[] = [
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [ethAmountToReceive, ethAmountToReceive],
+        },
+      ];
+
+      await expect(payroll.connect(payer).performMultiPayment(payments, {value: ethAmountToPay})).to.be.revertedWith(
+        'Payroll: ETH transfer failed'
+      );
+    });
+
+    it('should revert for not paying the fee in ETH', async () => {
+      const ethAmountToReceive = ethers.utils.parseEther('50.0');
+      const ethAmountToPay = ethers.utils.parseEther('100.0');
+
+      const fee = ethers.utils.parseUnits('0.01', 'ether');
+      await payroll.setFee(fee);
+
+      const payments: PaymentStruct[] = [
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [ethAmountToReceive, ethAmountToReceive],
+        },
+      ];
+
+      await expect(payroll.connect(payer).performMultiPayment(payments, {value: ethAmountToPay})).to.be.revertedWith(
+        'Payroll: ETH fee transfer failed'
+      );
+    });
   });
 });
