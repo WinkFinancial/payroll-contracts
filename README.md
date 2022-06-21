@@ -82,3 +82,14 @@ Deploy the contracts to biannce testnet Network:
 $ yarn deploy network bscTestnet
 ```
 
+## Deployments
+
+Ethereum Mainnet: 0x5bCe0AbAbA89e1d0e063978d87CfF2f8f5145942 https://etherscan.io/address/0x5bCe0AbAbA89e1d0e063978d87CfF2f8f5145942
+
+Binance Smart Chain Mainnet: 0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e https://bscscan.com/address/0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e
+
+Rinkeby: 0x977AfF4027BeFCcB5D5a476c69447382232Ef339 https://rinkeby.etherscan.io/address/0x977AfF4027BeFCcB5D5a476c69447382232Ef339
+
+Binance Smart Chain Testnet: 0x4d995D5B936889B9A26A12B7b48a22A80F226fde https://testnet.bscscan.com/address/0x4d995D5B936889B9A26A12B7b48a22A80F226fde
+
+
