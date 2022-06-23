@@ -352,7 +352,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
 
         uint256 leftOver = msg.value - totalETHSent;
-        if (leftOver > 0) {
+        if (leftOver > 1) {
             (bool success, ) = payable(msg.sender).call{value: leftOver}("");
             require(success, "Payroll: ETH leftOver transfer failed");
         }
