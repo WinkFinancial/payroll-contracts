@@ -179,7 +179,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external payable nonReentrant returns (uint256) {
+    ) external nonReentrant returns (uint256) {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -274,7 +274,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external payable nonReentrant returns (uint256) {
+    ) external nonReentrant returns (uint256) {
         require(isSwapV2, "Payroll: Not uniswapV2");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
