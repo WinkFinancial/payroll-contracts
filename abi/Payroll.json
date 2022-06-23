@@ -21,7 +21,7 @@
         "type": "uint256[]"
       }
     ],
-    "name": "BatchPaymentFinished",
+    "name": "BatchPayment",
     "type": "event"
   },
   {
@@ -335,7 +335,7 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -402,7 +402,7 @@
     ],
     "name": "performSwapV2AndPayment",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -453,7 +453,7 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -520,7 +520,7 @@
     ],
     "name": "performSwapV3AndPayment",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {

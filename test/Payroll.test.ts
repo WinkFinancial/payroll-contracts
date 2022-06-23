@@ -18,6 +18,7 @@ let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
 let feeAddress: SignerWithAddress;
+let deadline = 0;
 
 describe('Contract: Payroll', () => {
   beforeEach(async () => {
@@ -51,6 +52,9 @@ describe('Contract: Payroll', () => {
     await payroll.initialize(uniswapV2Router02.address, true, feeAddress.address, 0);
 
     await tokenB.transfer(payer.address, 1000000);
+
+    const timestamp = Date.now() + 1000 * 60 * 60;
+    deadline = Math.floor(timestamp / 1000);
   });
 
   describe('SwapRouter', () => {
@@ -203,6 +207,37 @@ describe('Contract: Payroll', () => {
       expect(await tokenB.balanceOf(userA.address)).to.equal(50);
       expect(await tokenB.balanceOf(userB.address)).to.equal(50);
       expect(previousBalanceTokenB.sub(newBalanceTokenB)).to.be.equal(100);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousUserABalanceETH.add(ethAmountToReceive));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousUserBBalanceETH.add(ethAmountToReceive));
+
+      // sent 150 to contract, expect leftover was returned
+      const payerETHFixedBalance = FixedNumber.fromValue(await ethers.provider.getBalance(payer.address), 18).round();
+      const previousPayerETHFixedBalance = FixedNumber.fromValue(previousPayerBalanceETH, 18).round();
+      expect(previousPayerETHFixedBalance.subUnsafe(FixedNumber.fromString('100.0')).toString()).to.equal(
+        payerETHFixedBalance.toString()
+      );
+    });
+
+    it('should transfer ETH using performSwapV2AndPayment', async () => {
+      const previousUserABalanceETH = await ethers.provider.getBalance(userA.address);
+      const previousUserBBalanceETH = await ethers.provider.getBalance(userB.address);
+      const previousPayerBalanceETH = await ethers.provider.getBalance(payer.address);
+
+      const ethAmountToReceive = ethers.utils.parseEther('50.0');
+      const ethAmountToPay = ethers.utils.parseEther('150.0');
+
+      const payments: PaymentStruct[] = [
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [ethAmountToReceive, ethAmountToReceive],
+        },
+      ];
+
+      await payroll
+        .connect(payer)
+        .performSwapV2AndPayment(ethers.constants.AddressZero, 0, deadline, [], payments, {value: ethAmountToPay});
 
       expect(await ethers.provider.getBalance(userA.address)).to.equal(previousUserABalanceETH.add(ethAmountToReceive));
       expect(await ethers.provider.getBalance(userB.address)).to.equal(previousUserBBalanceETH.add(ethAmountToReceive));

@@ -57,7 +57,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     event UpdatedVersion(uint256 _version);
     event FeeCharged(address _erc20TokenAddress, address _feeAddress, uint256 _fees);
     event FeeAddressChanged(address _feeAddress);
-    event BatchPaymentFinished(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
+    event BatchPayment(address _erc20TokenAddress, address[] _receivers, uint256[] _amountsToTransfer);
     event SwapFinished(address _tokenIn, address _tokenOut, uint256 _amountReceived);
 
     /**
@@ -158,7 +158,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint32 _deadline,
         SwapV3[] calldata _swaps,
         Payment[] calldata _payments
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         if (_swaps.length > 0) {
             _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -179,7 +179,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -253,7 +253,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint32 _deadline,
         SwapV2[] calldata _swaps,
         Payment[] calldata _payments
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         require(isSwapV2, "Payroll: Not uniswapV2");
         if (_swaps.length > 0) {
             _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -274,7 +274,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         require(isSwapV2, "Payroll: Not uniswapV2");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -334,6 +334,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _payments The array of the Payment data.
      */
     function _performMultiPayment(Payment[] calldata _payments) internal {
+        uint256 totalETHSent = 0;
         for (uint256 i = 0; i < _payments.length; i++) {
             require(_payments[i].amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
             require(
@@ -344,13 +345,14 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             if (_payments[i].token != address(0)) {
                 _performERC20Payment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             } else {
-                _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
-                uint256 leftOver = address(this).balance;
-                if (leftOver > 0) {
-                    (bool success, ) = payable(msg.sender).call{value: leftOver}("");
-                    require(success, "Payroll: ETH leftOver transfer failed");
-                }
+                totalETHSent = _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             }
+        }
+
+        uint256 leftOver = msg.value - totalETHSent;
+        if (leftOver > 0) {
+            (bool success, ) = payable(msg.sender).call{value: leftOver}("");
+            require(success, "Payroll: ETH leftOver transfer failed");
         }
     }
 
@@ -367,12 +369,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256[] calldata _amountsToTransfer
     ) internal {
         uint256 acumulatedFee = 0;
+        uint256 totalAmountSent = 0;
+
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
-            acumulatedFee = acumulatedFee + (_amountsToTransfer[i] * fee) / MANTISSA;
+            totalAmountSent = totalAmountSent + _amountsToTransfer[i];
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, _receivers[i], _amountsToTransfer[i]);
         }
-        emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
+        emit BatchPayment(_erc20TokenAddress, _receivers, _amountsToTransfer);
+
+        acumulatedFee = (totalAmountSent * fee) / MANTISSA;
         if (acumulatedFee > 0) {
             TransferHelper.safeTransferFrom(_erc20TokenAddress, msg.sender, feeAddress, acumulatedFee);
         }
@@ -389,20 +395,27 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         address _erc20TokenAddress,
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
-    ) internal {
+    ) internal returns (uint256) {
         uint256 acumulatedFee = 0;
+        uint256 totalAmountSent = 0;
+
         for (uint256 i = 0; i < _receivers.length; i++) {
             require(_receivers[i] != address(0), "Payroll: Cannot send to a 0 address");
-            acumulatedFee = acumulatedFee + (_amountsToTransfer[i] * fee) / MANTISSA;
+            totalAmountSent = totalAmountSent + _amountsToTransfer[i];
 
             (bool success, ) = payable(_receivers[i]).call{value: _amountsToTransfer[i]}("");
             require(success, "Payroll: ETH transfer failed");
         }
-        emit BatchPaymentFinished(_erc20TokenAddress, _receivers, _amountsToTransfer);
+        emit BatchPayment(_erc20TokenAddress, _receivers, _amountsToTransfer);
+
+        acumulatedFee = (totalAmountSent * fee) / MANTISSA;
         if (acumulatedFee > 0) {
+            totalAmountSent = totalAmountSent + acumulatedFee;
             (bool success, ) = payable(feeAddress).call{value: acumulatedFee}("");
             require(success, "Payroll: ETH fee transfer failed");
         }
         emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
+
+        return totalAmountSent;
     }
 }

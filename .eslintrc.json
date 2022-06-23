@@ -15,5 +15,8 @@
     "es6": true,
     "node": true
   },
-  "ignorePatterns": ["dist", "node_modules", "lib", "tests"]
+  "ignorePatterns": ["dist", "node_modules", "lib", "tests"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off"
+  }
 }
