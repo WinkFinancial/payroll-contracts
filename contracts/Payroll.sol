@@ -345,11 +345,9 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             if (_payments[i].token != address(0)) {
                 _performERC20Payment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             } else {
-                totalETHSent = totalETHSent + _performETHPayment(
-                    _payments[i].token,
-                    _payments[i].receivers,
-                    _payments[i].amountsToTransfer
-                );
+                totalETHSent =
+                    totalETHSent +
+                    _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             }
         }
 
