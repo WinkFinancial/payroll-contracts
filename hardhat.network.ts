@@ -43,6 +43,7 @@ if (mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['prod'],
   };
 
   networks.bscTestnet = {
@@ -52,24 +53,27 @@ if (mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['staging'],
   };
 
-  networks.matic = {
+  networks.polygon = {
     live: true,
     chainId: 137,
-    url: 'https://rpc-mainnet.maticvigil.com',
+    url: 'https://polygon-rpc.com',
     accounts: {
       mnemonic,
     },
+    tags: ['prod'],
   };
 
-  networks.mumbai = {
+  networks.polygonMumbai = {
     live: true,
     chainId: 80001,
-    url: 'https://rpc-mumbai.matic.today',
+    url: 'https://rpc-mumbai.maticvigil.com/',
     accounts: {
       mnemonic,
     },
+    tags: ['staging'],
   };
 
   networks.telos = {
@@ -79,6 +83,7 @@ if (mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['prod'],
   };
 
   networks.telosTestnet = {
@@ -88,6 +93,7 @@ if (mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['staging'],
   };
 }
 
@@ -99,6 +105,7 @@ if (infuraApiKey && mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['staging'],
   };
 
   networks.ropsten = {
@@ -108,6 +115,7 @@ if (infuraApiKey && mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['staging'],
   };
 
   networks.rinkeby = {
@@ -127,6 +135,7 @@ if (infuraApiKey && mnemonic) {
     accounts: {
       mnemonic,
     },
+    tags: ['prod'],
   };
 } else {
   console.warn('No infura or hdwallet available for testnets');
