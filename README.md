@@ -92,4 +92,5 @@ Rinkeby: 0x977AfF4027BeFCcB5D5a476c69447382232Ef339 https://rinkeby.etherscan.io
 
 Binance Smart Chain Testnet: 0x4d995D5B936889B9A26A12B7b48a22A80F226fde https://testnet.bscscan.com/address/0x4d995D5B936889B9A26A12B7b48a22A80F226fde
 
+Telos EVM Testnet: 0xdcF72c0De33a53BACfa7562ab86375e4Fe90bC65 https://testnet.telos.net/v2/explore/evm/address/0xdcf72c0de33a53bacfa7562ab86375e4fe90bc65
 

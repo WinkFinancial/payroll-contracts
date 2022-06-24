@@ -71,6 +71,24 @@ if (mnemonic) {
       mnemonic,
     },
   };
+
+  networks.telos = {
+    live: true,
+    chainId: 40,
+    url: 'https://mainnet.telos.net/evm',
+    accounts: {
+      mnemonic,
+    },
+  };
+
+  networks.telosTestnet = {
+    live: true,
+    chainId: 41,
+    url: 'https://testnet.telos.net/evm',
+    accounts: {
+      mnemonic,
+    },
+  };
 }
 
 if (infuraApiKey && mnemonic) {
