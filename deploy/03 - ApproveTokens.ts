@@ -18,8 +18,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const {deployments, getNamedAccounts, network, ethers} = hre;
 
     if (network.live) {
-      const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI} = await getNamedAccounts();
-      const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI];
+      const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, ada, doge, wbnb, wbtc} = await getNamedAccounts();
+      const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, ada, doge, wbnb, wbtc];
       const tokensToApprove = tokens.filter((x) => !!x);
 
       const Payroll = await deployments.get('Payroll');

@@ -87,6 +87,20 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     41: '0xC50C7a502e6aE874A6299f385F938aF5C30CB91d',
     80001: '0x88F6B2bC66f4c31a3669b9b1359524aBf79CfC4A',
   },
+  wbnb: {
+    // BTC
+    97: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
+    56: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+  },
+  wbtc: {
+    97: '0xCbBbdc113F480a83050C7Cd2420E100Cf6305858',
+  },
+  ada: {
+    56: '0x3ee2200efb3400fabb9aacf31297cbdd1d435d47',
+  },
+  doge: {
+    56: '0xba2ae424d960c26247dd6c32edc70b295c744c43',
+  },
 };
 
 export default networks;
