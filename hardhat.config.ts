@@ -60,6 +60,8 @@ const config: HardhatUserConfig = {
       kovan: process.env.ETHERSCAN_API_KEY,
       bsc: process.env.BSC_API_KEY,
       bscTestnet: process.env.BSC_API_KEY,
+      polygonMumbai: process.env.POLY_API_KEY,
+      polygon: process.env.POLY_API_KEY,
     },
   },
   namedAccounts,
