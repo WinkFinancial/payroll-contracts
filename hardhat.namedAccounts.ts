@@ -112,12 +112,6 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   uni: {
     1: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
   },
-  axs: {
-    1: '0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b',
-  },
-  slp: {
-    1: '0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25',
-  },
 };
 
 export default networks;
