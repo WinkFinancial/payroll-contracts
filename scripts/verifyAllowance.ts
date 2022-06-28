@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers';
+import {BigNumber} from 'ethers';
 import hre from 'hardhat';
 
 const version = 'v0.2.0';
