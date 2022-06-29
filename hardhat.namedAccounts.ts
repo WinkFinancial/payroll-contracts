@@ -51,6 +51,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     137: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
   },
   busd: {
+    1: '0x4fabb145d64652a948d72533023f6e7a623c7c53',
     97: '0x78867bbeef44f2326bf8ddd1941a4439382ef2a7',
     56: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
     137: '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7',
@@ -86,6 +87,30 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     97: '0xD2E96745ddd7c6641866C9335909AeC605eF07A4',
     41: '0xC50C7a502e6aE874A6299f385F938aF5C30CB91d',
     80001: '0x88F6B2bC66f4c31a3669b9b1359524aBf79CfC4A',
+  },
+  wbnb: {
+    // BTC
+    97: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
+    56: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+  },
+  wbtc: {
+    1: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+    97: '0xCbBbdc113F480a83050C7Cd2420E100Cf6305858',
+  },
+  ada: {
+    56: '0x3ee2200efb3400fabb9aacf31297cbdd1d435d47',
+  },
+  doge: {
+    56: '0xba2ae424d960c26247dd6c32edc70b295c744c43',
+  },
+  shiba: {
+    1: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+  },
+  link: {
+    1: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+  },
+  uni: {
+    1: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
   },
 };
 
