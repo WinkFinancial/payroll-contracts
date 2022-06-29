@@ -16,38 +16,36 @@ const func = async () => {
     console.log(`Verifying tokens approved ${contractName} ${version}`);
     const {getNamedAccounts, network, ethers, deployments} = hre;
 
-    if (network.live) {
-      const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, swapRouter} = await getNamedAccounts();
-      const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI];
-      const tokensToApprove = tokens.filter((x) => !!x);
+    const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, swapRouter} = await getNamedAccounts();
+    const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI];
+    const tokensToApprove = tokens.filter((x) => !!x);
 
-      // Add more tokens...
-      // tokensToApprove.push('0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3');
+    // Add more tokens...
+    // tokensToApprove.push('0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3');
 
-      const payroll = await deployments.get('Payroll');
-      const routerAddress = swapRouter;
+    const payroll = await deployments.get('Payroll');
+    const routerAddress = swapRouter;
 
-      console.log(`Verifying allowance...
+    console.log(`Verifying allowance...
       payroll: ${payroll.address}
       router: ${routerAddress}
       network: ${network.name}`);
 
-      await Promise.all(
-        tokensToApprove.map(async (tokenAddress) => {
-          const token = await ethers.getContractAt('Token', tokenAddress);
+    await Promise.all(
+      tokensToApprove.map(async (tokenAddress) => {
+        const token = await ethers.getContractAt('Token', tokenAddress);
 
-          const amountApproved: BigNumber = await token.allowance(payroll.address, routerAddress);
+        const amountApproved: BigNumber = await token.allowance(payroll.address, routerAddress);
 
-          if (amountApproved.isZero()) {
-            console.log(`Token ${tokenAddress} has no allowance`);
-          } else {
-            console.log(`Token ${tokenAddress} OK`);
-          }
-        })
-      );
+        if (amountApproved.isZero()) {
+          console.log(`Token ${tokenAddress} has no allowance`);
+        } else {
+          console.log(`Token ${tokenAddress} OK`);
+        }
+      })
+    );
 
-      console.log(`Done!`);
-    }
+    console.log(`Done!`);
 
     return true;
   }
