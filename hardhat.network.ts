@@ -132,6 +132,7 @@ if (infuraApiKey && mnemonic) {
   networks.mainnet = {
     live: true,
     url: alchemyUrl,
+    chainId: 1,
     accounts: {
       mnemonic,
     },
