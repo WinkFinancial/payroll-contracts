@@ -1,10 +1,9 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import {networksByChainId} from '@wink-financial/wink-assets';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
-
-const UNISWAP_V3_CHAINS = [1, 3, 4, 5, 42]; // Ethereum and it's testnets
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
@@ -19,11 +18,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const {deployments, getNamedAccounts, network} = hre;
     const chainId = network.config.chainId || 0;
 
+    if (!chainId) {
+      throw new Error("No chainId found");
+    }
+    const networkData = networksByChainId[chainId];
+
     const {deploy} = deployments;
 
-    const {deployer, swapRouter, feeAddress} = await getNamedAccounts();
+    const {deployer, feeAddress} = await getNamedAccounts();
 
-    const isSwapV2 = UNISWAP_V3_CHAINS.indexOf(chainId) === -1 ? true : false;
+    const swapRouter = networkData.routerAddress;
+    const isSwapV2 = networkData.isSwapV2;
     const fee = 0;
 
     const deployResult = await deploy(contractName, {

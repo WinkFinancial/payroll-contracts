@@ -1,5 +1,5 @@
 import {BigNumber} from 'ethers';
-import {tokensByChainId} from '@wink-financial/wink-assets';
+import {tokensByChainId,networksByChainId} from '@wink-financial/wink-assets';
 import hre from 'hardhat';
 
 const version = 'v0.2.0';
@@ -15,18 +15,17 @@ const func = async () => {
     await hre.run('compile');
 
     console.log(`Verifying tokens approved ${contractName} ${version}`);
-    const {getNamedAccounts, network, ethers, deployments} = hre;
+    const {network, ethers, deployments} = hre;
 
     const chainId = network.config.chainId || 0;
     const tokens = tokensByChainId[chainId] || [];
 
-    const {swapRouter} = await getNamedAccounts();
+    const {routerAddress} = networksByChainId[chainId];
 
     // Add more tokens...
     // tokens.push(IToken);
 
     const payroll = await deployments.get('Payroll');
-    const routerAddress = swapRouter;
 
     console.log(`Verifying allowance...
       payroll: ${payroll.address}
