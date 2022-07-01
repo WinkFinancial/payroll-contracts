@@ -32,6 +32,35 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     137: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
   },
+  jUSDT: {
+    4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
+    97: '0x863C2c19208aC736324e438DF9a49F39c3dbA843',
+    41: '0x623F71f6d0339E4c639d7cA6303B54ACe40Be2aC',
+    80001: '0x90596469bB8f8434FBb98c02B6E856e83a30AE78',
+  },
+  jWBTC: {
+    4: '0x879947a97a662E8294aFD601a901383D7731484e',
+    97: '0xCbBbdc113F480a83050C7Cd2420E100Cf6305858',
+    41: '0xB34fc9b45dd1E2eADC78E25f81e57e14AdA94C92',
+    80001: '0x988777898643893f44E4F086D8f747eEF21429E1',
+  },
+  jDAI: {
+    4: '0x659b25Cbf47128BF952EFB97f27b0821F169A1E5',
+    97: '0xD2E96745ddd7c6641866C9335909AeC605eF07A4',
+    41: '0xC50C7a502e6aE874A6299f385F938aF5C30CB91d',
+    80001: '0x88F6B2bC66f4c31a3669b9b1359524aBf79CfC4A',
+  },
+  isSwapRouterV2: {
+    default: 'false',
+    1: 'false',
+    4: 'false',
+    56: 'true',
+    97: 'true',
+    40: 'true',
+    41: 'true',
+    137: 'true',
+    80001: 'true',
+  }
 };
 
 export default networks;

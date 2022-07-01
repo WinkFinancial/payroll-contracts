@@ -25,10 +25,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
     const {deploy} = deployments;
 
-    const {deployer, feeAddress} = await getNamedAccounts();
+    const {deployer, feeAddress, swapRouter, isSwapRouterV2} = await getNamedAccounts();
 
-    const swapRouter = networkData.routerAddress;
-    const isSwapV2 = networkData.isSwapV2;
+    const routerAddress = networkData?.routerAddress || swapRouter;
+    const isSwapV2 = networkData?.isSwapV2 || isSwapRouterV2;
     const fee = 0;
 
     const deployResult = await deploy(contractName, {
@@ -38,7 +38,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         execute: {
           init: {
             methodName: 'initialize',
-            args: [swapRouter, isSwapV2, feeAddress, fee],
+            args: [routerAddress, isSwapV2, feeAddress, fee],
           },
         },
       },
