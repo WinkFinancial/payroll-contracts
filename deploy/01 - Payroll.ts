@@ -19,7 +19,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const chainId = network.config.chainId || 0;
 
     if (!chainId) {
-      throw new Error("No chainId found");
+      throw new Error('No chainId found');
     }
     const networkData = networksByChainId[chainId];
 

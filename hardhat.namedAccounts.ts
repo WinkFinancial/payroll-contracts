@@ -60,7 +60,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     41: 'true',
     137: 'true',
     80001: 'true',
-  }
+  },
 };
 
 export default networks;

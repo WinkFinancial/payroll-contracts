@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import { tokensByChainId } from '@wink-financial/wink-assets';
+import {tokensByChainId} from '@wink-financial/wink-assets';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
@@ -21,10 +21,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     if (network.live) {
       const chainId = network.config.chainId || 0;
       const tokens = tokensByChainId[chainId] || [];
-      
+
       const tokensToApprove = tokens.map((x) => x.address);
       if (!tokensToApprove.length) {
-        console.log('No tokens to approve')
+        console.log('No tokens to approve');
         return;
       }
 
