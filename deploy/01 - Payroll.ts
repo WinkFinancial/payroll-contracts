@@ -18,9 +18,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const {deployments, getNamedAccounts, network} = hre;
     const chainId = network.config.chainId || 0;
 
-    if (!chainId) {
-      throw new Error('No chainId found');
-    }
     const networkData = networksByChainId[chainId];
 
     const {deploy} = deployments;
@@ -46,23 +43,20 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    if (deployResult.newlyDeployed && deployResult.transactionHash) {
-      if (network.live) {
-        const blocks = 5;
-        console.log(`Waiting ${blocks} blocks before verifying`);
-        await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
-        try {
-          console.log(`Startig Verification of Payroll_Implementation ${deployResult.implementation}`);
-          await hre.run('verify:verify', {
-            address: deployResult.implementation,
-          });
-        } catch (err: any) {
-          if (err.message.includes('Already Verified')) {
-            return;
-          } else {
-            throw err;
-          }
+    if (deployResult.newlyDeployed && deployResult.transactionHash && network.live) {
+      const blocks = 5;
+      console.log(`Waiting ${blocks} blocks before verifying`);
+      await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
+      try {
+        console.log(`Startig Verification of Payroll_Implementation ${deployResult.implementation}`);
+        await hre.run('verify:verify', {
+          address: deployResult.implementation,
+        });
+      } catch (err: any) {
+        if (err.message.includes('Already Verified')) {
+          return;
         }
+        throw err;
       }
     }
 
