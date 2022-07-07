@@ -1,4 +1,5 @@
 import {BigNumber} from 'ethers';
+import {tokensByChainId, networksByChainId} from '@wink-financial/wink-assets';
 import hre from 'hardhat';
 
 const version = 'v0.2.0';
@@ -14,17 +15,17 @@ const func = async () => {
     await hre.run('compile');
 
     console.log(`Verifying tokens approved ${contractName} ${version}`);
-    const {getNamedAccounts, network, ethers, deployments} = hre;
+    const {network, ethers, deployments} = hre;
 
-    const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, swapRouter} = await getNamedAccounts();
-    const tokens = [dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI];
-    const tokensToApprove = tokens.filter((x) => !!x);
+    const chainId = network.config.chainId || 0;
+    const tokens = tokensByChainId[chainId] || [];
+
+    const {routerAddress} = networksByChainId[chainId];
 
     // Add more tokens...
-    // tokensToApprove.push('0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3');
+    // tokens.push(IToken);
 
     const payroll = await deployments.get('Payroll');
-    const routerAddress = swapRouter;
 
     console.log(`Verifying allowance...
       payroll: ${payroll.address}
@@ -32,15 +33,18 @@ const func = async () => {
       network: ${network.name}`);
 
     await Promise.all(
-      tokensToApprove.map(async (tokenAddress) => {
-        const token = await ethers.getContractAt('Token', tokenAddress);
+      tokens.map(async (token) => {
+        if (token.address === ethers.constants.AddressZero || !token.enabled) {
+          return;
+        }
 
-        const amountApproved: BigNumber = await token.allowance(payroll.address, routerAddress);
+        const tokenContract = await ethers.getContractAt('Token', token.address);
+        const amountApproved: BigNumber = await tokenContract.allowance(payroll.address, routerAddress);
 
         if (amountApproved.isZero()) {
-          console.log(`Token ${tokenAddress} has no allowance`);
+          console.log(`Token ${token.symbol} - ${token.address} has no allowance`);
         } else {
-          console.log(`Token ${tokenAddress} OK`);
+          console.log(`Token ${token.symbol} - ${token.address} OK`);
         }
       })
     );

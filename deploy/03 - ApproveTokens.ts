@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import {tokensByChainId} from '@wink-financial/wink-assets';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
@@ -15,31 +16,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // await hre.run('compile');
 
     console.log(`Approving ${contractName} ${version}`);
-    const {deployments, getNamedAccounts, network, ethers} = hre;
+    const {deployments, network, ethers} = hre;
 
     if (network.live) {
-      const {dai, usdc, usdt, busd, btcb, eth, xrp, jUSDT, jWBTC, jDAI, wbnb, wbtc, ada, doge, shiba, link, uni} =
-        await getNamedAccounts();
-      const tokens = [
-        dai,
-        usdc,
-        usdt,
-        busd,
-        btcb,
-        eth,
-        xrp,
-        jUSDT,
-        jWBTC,
-        jDAI,
-        wbnb,
-        wbtc,
-        ada,
-        doge,
-        shiba,
-        link,
-        uni,
-      ];
-      const tokensToApprove = tokens.filter((x) => !!x);
+      const chainId = network.config.chainId || 0;
+      const tokens = tokensByChainId[chainId] || [];
+
+      const tokensToApprove = tokens.map((x) => x.address);
+      if (!tokensToApprove.length) {
+        console.log('No tokens to approve');
+        return;
+      }
 
       const Payroll = await deployments.get('Payroll');
       const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
