@@ -95,6 +95,26 @@ if (mnemonic) {
     },
     tags: ['staging'],
   };
+
+  networks.rsk = {
+    live: true,
+    chainId: 30,
+    url: 'https://public-node.rsk.co',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['prod'],
+  };
+
+  networks.rskTestnet = {
+    live: true,
+    chainId: 31,
+    url: 'https://public-node.testnet.rsk.co',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['staging'],
+  };
 }
 
 if (infuraApiKey && mnemonic) {

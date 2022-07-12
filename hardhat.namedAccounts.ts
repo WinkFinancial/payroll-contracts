@@ -18,6 +18,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     97: 0, // For testnet use first account
     40: 0,
     41: 0, // For testnet use first account
+    30: 0,
+    31: 0, // For testnet use first account
     137: 0,
     80001: 0, // For testnet use first account
   },
@@ -29,6 +31,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     97: '0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1', // apeswap v2 or 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 https://pancake.kiemtienonline360.com/
     40: '0xB9239AF0697C8efb42cBA3568424b06753c6da71', // zappy.finance v2
     41: '0xd03d102C9dfCE013eA4671B5c282D65Cf1eB1DC5', // demo.telos.finance v2
+    30: '0xf55c496bb1058690DB1401c4b9C19F3f44374961', // rskswap v2
+    31: '0xf55c496bb1058690DB1401c4b9C19F3f44374961', // rskswap v2
     137: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
   },
@@ -58,6 +62,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     97: 'true',
     40: 'true',
     41: 'true',
+    30: 'true',
+    31: 'true',
     137: 'true',
     80001: 'true',
   },
