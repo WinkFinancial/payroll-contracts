@@ -72,7 +72,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.0",
-    "@wink-financial/wink-assets": "^1.0.3",
+    "@wink-financial/wink-assets": "^1.0.9",
     "solhint-plugin-prettier": "^0.0.5"
   }
 }

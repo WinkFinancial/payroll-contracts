@@ -1316,10 +1316,10 @@
     "@webassemblyjs/ast" "1.11.1"
     "@xtuc/long" "4.2.2"
 
-"@wink-financial/wink-assets@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@wink-financial/wink-assets/-/wink-assets-1.0.3.tgz#07f5edeaa46902cc167df326a514ddddd3eceb71"
-  integrity sha512-VYf7rdwGu93rCs9K03CNQJPum+0WlqnLPAAdA9vz4D91iSKV1+oA8jxzfgQz2mqG39yhXteH7lZqmVhdlD0opg==
+"@wink-financial/wink-assets@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@wink-financial/wink-assets/-/wink-assets-1.0.9.tgz#a2be9209a95ecf410186c57ff9c988bdd30c24d3"
+  integrity sha512-0vWQD0fTfSNoJ6WbJd0eDE9bXr0YObY/xtUUXnLi4WLDCp5UBjHRwo+oGZIcYEMJrx54tw1NEn3JrXV8uxkdrQ==
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
