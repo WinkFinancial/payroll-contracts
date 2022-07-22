@@ -3,7 +3,7 @@ const TronWeb = require('tronweb');
 // eslint-disable-next-line
 const abi = require('../abi/Payroll.json');
 
-const getTronWeb = async () => {
+const getTronWeb = () => {
   return new TronWeb({
     fullHost: 'https://api.shasta.trongrid.io',
     eventServer: 'https://api.shasta.trongrid.io',
@@ -17,10 +17,10 @@ const USDT = 'TSsjPxRVQxN5CKk59Gfxyme5vhgp3ymSKq';
 const ADA = 'TTMuLqv8eLSVUbdR8U6rPH99HZKGAfX7J2';
 
 const init = async () => {
-  let tronWeb = await getTronWeb();
+  let tronWeb = getTronWeb();
   let contract = await tronWeb.contract(abi, payrollAddress);
   const myAddress = tronWeb.defaultAddress.base58;
-  await console.log('My address: ', myAddress);
+  console.log('My address: ', myAddress);
 
   try {
     let data = await contract.methods
