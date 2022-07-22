@@ -1,0 +1,31 @@
+WrappedTRX
+Successful deployed contract 'WrappedTRX'. Cost: 144.59788 TRX, 0 energy. Transaction confirm here b23e498b0b99be5dfdf3d9c80fa76eb5aad7db1762190d8aa988bbd05377b74b
+Contract address:  TMu1ka7N76ZdMEQdTx5KmXnbxe2fp1RvhM
+https://shasta.tronscan.org/#/contract/TMu1ka7N76ZdMEQdTx5KmXnbxe2fp1RvhM/code
+
+
+UniswapV2Factory
+Successful deployed contract 'UniswapV2Factory'. Cost: 631.39944 TRX, 0 energy. Transaction confirm here d1a1f55f11e30052031870c52a7bc959b3a9f8166b1d3d58960c936f1bf7c5a0
+Contract address:  TUuQqgwFuYj7nECBmuAnxYCvhfNxuzjJhT
+https://shasta.tronscan.org/#/contract/TUuQqgwFuYj7nECBmuAnxYCvhfNxuzjJhT/code
+
+
+UniswapV2Router02
+Successful deployed contract 'UniswapV2Router02'. Cost: 979.49124 TRX, 0 energy. Transaction confirm here 2af5dcf8e2fe65acbc8cb655d7e0d4b64ccec2e0230e7602a81103703c7c8f78
+Contract address:  TWXDN5iMLssZxQHJH8gB1jmQiUxbsBFQpa
+https://shasta.tronscan.org/#/contract/TWXDN5iMLssZxQHJH8gB1jmQiUxbsBFQpa/code
+
+
+Payroll - Shasta
+Successful deployed contract 'Payroll'. Cost: 592.61776 TRX, 0 energy. Transaction confirm here 022824aa6836e153685886c7fe0940cce694815c95d86ab95c7dfbfc113d2311
+Contract address:  TD1o2DV6E5iXu2dPbu1nFPRozbqNEtiBP4
+https://shasta.tronscan.org/#/contract/TD1o2DV6E5iXu2dPbu1nFPRozbqNEtiBP4/code
+
+run:
+initialize (solo se puede correr una vez)
+approve tokens 
+
+
+Tokens ERC20
+usdc - TSsjPxRVQxN5CKk59Gfxyme5vhgp3ymSKq
+ada - TTMuLqv8eLSVUbdR8U6rPH99HZKGAfX7J2
