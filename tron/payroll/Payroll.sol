@@ -1,5 +1,4 @@
-//SPDX-License-Identifier: AGPL-3.0-or-later
-// Sources flattened with hardhat v2.9.2 https://hardhat.org
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 // File @openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol@v4.5.2
 
@@ -1105,7 +1104,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                 _deadline
             )[0];
             totalAmountIn = totalAmountIn + amountIn;
-            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps.length - 1], amountIn);
+            address[] calldata path = _swaps[i].path;
+            emit SwapFinished(_erc20TokenOrigin, path[path.length - 1], amountIn);
         }
 
         uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
