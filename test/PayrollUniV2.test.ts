@@ -1,10 +1,10 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
-import { BigNumber, Contract } from 'ethers';
-import { ethers, network } from 'hardhat';
-import { Payroll, Token } from '../typechain-types';
-import { PaymentStruct, SwapV2Struct } from '../typechain-types/Payroll';
-import { addLiquidity, createPair, deploy, DeployResult } from './helpers/uniswap';
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {expect} from 'chai';
+import {BigNumber, Contract} from 'ethers';
+import {ethers, network} from 'hardhat';
+import {Payroll, Token} from '../typechain-types';
+import {PaymentStruct, SwapV2Struct} from '../typechain-types/Payroll';
+import {addLiquidity, createPair, deploy, DeployResult} from './helpers/uniswap';
 
 let uniswapV2Router02: Contract;
 let tokenA: Token;
@@ -44,7 +44,7 @@ describe('Contract: Payroll UniV2', () => {
       tokenB = tmp;
     }
 
-    const deployResult: DeployResult = await deploy({ owner: admin });
+    const deployResult: DeployResult = await deploy({owner: admin});
     uniswapV2Router02 = deployResult.uniswapV2Router02;
 
     const Payroll = await ethers.getContractFactory('Payroll');
@@ -142,9 +142,9 @@ describe('Contract: Payroll UniV2', () => {
 
     it('performSwapV2 test, should swap 3 tokens', async () => {
       const swaps: SwapV2Struct[] = [
-        { amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenA.address] },
-        { amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenC.address] },
-        { amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenD.address] },
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenA.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenC.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenD.address]},
       ];
 
       await payroll.connect(payer).performSwapV2(tokenB.address, 1000, deadline, swaps);
@@ -156,8 +156,8 @@ describe('Contract: Payroll UniV2', () => {
 
     it('should only swap', async () => {
       const swaps: SwapV2Struct[] = [
-        { amountOut: 100, amountInMax: 150, path: [tokenB.address, tokenA.address] },
-        { amountOut: 100, amountInMax: 150, path: [tokenB.address, tokenC.address] },
+        {amountOut: 100, amountInMax: 150, path: [tokenB.address, tokenA.address]},
+        {amountOut: 100, amountInMax: 150, path: [tokenB.address, tokenC.address]},
       ];
 
       const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
