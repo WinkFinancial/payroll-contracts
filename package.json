@@ -13,6 +13,7 @@
     "typechain": "TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "coverage": "hardhat coverage",
     "flatten": "hardhat flatten",
+    "flattenTron": "hardhat flatten ./contracts/Payroll.sol > ./tron/Payroll.sol",
     "deploy": "hardhat deploy --network",
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
