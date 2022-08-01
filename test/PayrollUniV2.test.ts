@@ -1,17 +1,16 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
 import {expect} from 'chai';
-import {Contract, BigNumber} from 'ethers';
-import {deploy, createPair, addLiquidity, DeployResult} from './helpers/uniswap';
-
-import {Token, Payroll} from '../typechain-types';
+import {BigNumber, Contract} from 'ethers';
+import {ethers, network} from 'hardhat';
+import {Payroll, Token} from '../typechain-types';
 import {PaymentStruct, SwapV2Struct} from '../typechain-types/Payroll';
-import {network} from 'hardhat';
+import {addLiquidity, createPair, deploy, DeployResult} from './helpers/uniswap';
 
 let uniswapV2Router02: Contract;
 let tokenA: Token;
 let tokenB: Token;
 let tokenC: Token;
+let tokenD: Token;
 let payroll: Payroll;
 let admin: SignerWithAddress;
 let payer: SignerWithAddress;
@@ -31,6 +30,7 @@ describe('Contract: Payroll UniV2', () => {
     tokenA = (await Token.deploy('Token_A', 'TKA')) as Token;
     tokenB = (await Token.deploy('Token_B', 'TKB')) as Token;
     tokenC = (await Token.deploy('Token_C', 'TKC')) as Token;
+    tokenD = (await Token.deploy('Token_D', 'TKD')) as Token;
 
     if (Number(tokenA.address) > Number(tokenB.address)) {
       const tmp = tokenB;
@@ -53,10 +53,12 @@ describe('Contract: Payroll UniV2', () => {
 
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);
+    await createPair(tokenB.address, tokenD.address);
 
     await tokenA.approve(uniswapV2Router02.address, 10000000000000);
     await tokenB.approve(uniswapV2Router02.address, 10000000000000);
     await tokenC.approve(uniswapV2Router02.address, 10000000000000);
+    await tokenD.approve(uniswapV2Router02.address, 10000000000000);
 
     await addLiquidity({
       owner: admin,
@@ -71,6 +73,14 @@ describe('Contract: Payroll UniV2', () => {
       token0: tokenC,
       amountA: BigNumber.from('1000000000000'),
       token1: tokenB,
+      amountB: BigNumber.from('1000000000000'),
+    });
+
+    await addLiquidity({
+      owner: admin,
+      token0: tokenB,
+      amountA: BigNumber.from('1000000000000'),
+      token1: tokenD,
       amountB: BigNumber.from('1000000000000'),
     });
 
@@ -128,6 +138,20 @@ describe('Contract: Payroll UniV2', () => {
       expect(await tokenC.balanceOf(userB.address)).to.equal(100);
 
       expect(previousBalanceTokenB.sub(newBalanceTokenB).toNumber()).to.be.closeTo(600, 2);
+    });
+
+    it('performSwapV2 test, should swap 3 tokens', async () => {
+      const swaps: SwapV2Struct[] = [
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenA.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenC.address]},
+        {amountOut: 200, amountInMax: 250, path: [tokenB.address, tokenD.address]},
+      ];
+
+      await payroll.connect(payer).performSwapV2(tokenB.address, 1000, deadline, swaps);
+
+      expect(await tokenA.balanceOf(payer.address)).to.equal(200);
+      expect(await tokenC.balanceOf(payer.address)).to.equal(200);
+      expect(await tokenD.balanceOf(payer.address)).to.equal(200);
     });
 
     it('should only swap', async () => {
