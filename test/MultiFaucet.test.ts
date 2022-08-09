@@ -1,8 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import {ethers, network} from 'hardhat';
 import {expect} from 'chai';
 import {Token, MultiFaucet} from '../typechain-types';
-import {network} from 'hardhat';
 
 let tokenA: Token;
 let tokenB: Token;
@@ -18,12 +17,12 @@ describe('Contract: MultiFaucet', () => {
 
     [userA, userB] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory('Token');
-    tokenA = (await Token.deploy('Token_A', 'TKA')) as Token;
-    tokenB = (await Token.deploy('Token_A', 'TKA')) as Token;
+    const TokenInstance = await ethers.getContractFactory('Token');
+    tokenA = (await TokenInstance.deploy('Token_A', 'TKA')) as Token;
+    tokenB = (await TokenInstance.deploy('Token_A', 'TKA')) as Token;
 
-    const MultiFaucet = await ethers.getContractFactory('MultiFaucet');
-    multiFaucet = (await MultiFaucet.deploy()) as MultiFaucet;
+    const MultiFaucetInstance = await ethers.getContractFactory('MultiFaucet');
+    multiFaucet = (await MultiFaucetInstance.deploy()) as MultiFaucet;
 
     await multiFaucet.addFaucet(tokenA.address, 100);
     await tokenA.transfer(multiFaucet.address, 100);
