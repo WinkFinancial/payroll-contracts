@@ -30,7 +30,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    console.log("hola")
+    console.log('hola');
 
     if (deployResult.newlyDeployed && deployResult.transactionHash) {
       const blocks = 5;

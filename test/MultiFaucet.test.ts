@@ -26,7 +26,7 @@ describe('Contract: MultiFaucet', () => {
     multiFaucet = (await MultiFaucet.deploy()) as MultiFaucet;
 
     await multiFaucet.addFaucet(tokenA.address, 100);
-    await tokenA.transfer(multiFaucet.address, 100)
+    await tokenA.transfer(multiFaucet.address, 100);
   });
 
   describe('Faucet', () => {
@@ -76,7 +76,7 @@ describe('Contract: MultiFaucet', () => {
       const faucet = await multiFaucet.faucets(tokenA.address);
       await multiFaucet.connect(userB).requestFunds(tokenA.address);
       const userBalance = await tokenA.balanceOf(userB.address);
-      expect(userBalance).to.equal(faucet[1])
+      expect(userBalance).to.equal(faucet[1]);
     });
 
     it('should throw error when a faucet does not have enough funds', async () => {

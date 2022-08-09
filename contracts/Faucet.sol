@@ -12,7 +12,6 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @notice Multiple ERC20 faucet
  */
 contract MultiFaucet {
-
     struct Faucet {
         address owner;
         uint256 amountToGive;
@@ -31,7 +30,10 @@ contract MultiFaucet {
      * @param _amountToGive amount that the faucet will give.
      */
     function addFaucet(address _token, uint256 _amountToGive) external {
-        require(faucets[_token].owner == address(0), "MultiFaucet: This faucet already exist, you can still deposit funds");
+        require(
+            faucets[_token].owner == address(0),
+            "MultiFaucet: This faucet already exist, you can still deposit funds"
+        );
         faucets[_token] = Faucet(msg.sender, _amountToGive);
     }
 
