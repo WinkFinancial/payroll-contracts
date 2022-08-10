@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import { verifyContract } from './utils/verifyContract';
 
 const version = 'v0.1.0';
 const contractName = 'MultiFaucet';
@@ -30,22 +31,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    if (deployResult.newlyDeployed && deployResult.transactionHash) {
-      const blocks = 5;
-      console.log(`Waiting ${blocks} blocks before verifying`);
-      await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
-      try {
-        console.log(`Startig Verification of MultiFaucet_Implementation ${deployResult.address}`);
-        await hre.run('verify:verify', {
-          address: deployResult.address,
-        });
-      } catch (err: any) {
-        if (err.message.includes('Already Verified')) {
-          return;
-        }
-        throw err;
-      }
-    }
+    await verifyContract(deployResult)
 
     return true;
   }

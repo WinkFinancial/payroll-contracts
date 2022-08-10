@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {networksByChainId} from '@wink-financial/wink-assets';
+import { verifyContract } from './utils/verifyContract';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
@@ -43,21 +44,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    if (deployResult.newlyDeployed && deployResult.transactionHash && network.live && network.name !== 'rsk') {
-      const blocks = 5;
-      console.log(`Waiting ${blocks} blocks before verifying`);
-      await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
-      try {
-        console.log(`Startig Verification of Payroll_Implementation ${deployResult.implementation}`);
-        await hre.run('verify:verify', {
-          address: deployResult.implementation,
-        });
-      } catch (err: any) {
-        if (err.message.includes('Already Verified')) {
-          return;
-        }
-        throw err;
-      }
+    if (network.live) {
+      await verifyContract(deployResult)
     }
 
     return true;
