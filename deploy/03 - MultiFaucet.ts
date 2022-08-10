@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import { verifyContract } from './utils/verifyContract';
+import { verifyContract } from '../utils/verifyContract';
 
 const version = 'v0.1.0';
 const contractName = 'MultiFaucet';
@@ -31,7 +31,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    await verifyContract(deployResult)
+    await verifyContract(deployResult, contractName)
 
     return true;
   }

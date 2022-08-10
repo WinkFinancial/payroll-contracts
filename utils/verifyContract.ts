@@ -6,7 +6,11 @@ export type TaskArgs = {
   constructorArguments?: string[];
 };
 
-export const verifyContract = async (deployResult: DeployResult, constructorArguments?: string[]) => {
+export const verifyContract = async (
+  deployResult: DeployResult,
+  contractName: string,
+  constructorArguments?: string[]
+) => {
   if (deployResult.newlyDeployed && deployResult.transactionHash) {
     const blocks = 5;
     const address = deployResult.implementation || deployResult.address;
@@ -16,7 +20,7 @@ export const verifyContract = async (deployResult: DeployResult, constructorArgu
     console.log(`Waiting ${blocks} blocks before verifying`);
     await ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
     try {
-      console.log(`Startig Verification of Payroll_Implementation ${address}`);
+      console.log(`Startig Verification of ${contractName} ${address}`);
       await run('verify:verify', taskArgs);
     } catch (err: any) {
       if (err.message.includes('Already Verified')) {
