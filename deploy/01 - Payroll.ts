@@ -1,7 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {networksByChainId} from '@wink-financial/wink-assets';
-import { verifyContract } from '../utils/verifyContract';
+import {verifyContract} from '../utils/verifyContract';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
@@ -45,7 +45,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     });
 
     if (network.live) {
-      await verifyContract(deployResult, contractName)
+      await verifyContract(deployResult, contractName);
     }
 
     return true;

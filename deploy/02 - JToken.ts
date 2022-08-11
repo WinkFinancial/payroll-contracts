@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import { verifyContract } from '../utils/verifyContract';
+import {verifyContract} from '../utils/verifyContract';
 
 const version = 'v0.2.0';
 const contractName = 'Token';
@@ -34,7 +34,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         log: true,
       });
 
-      await verifyContract(deployResult, symbol, constructorArguments)
+      await verifyContract(deployResult, symbol, constructorArguments);
     };
 
     if (!jUSDT) {
