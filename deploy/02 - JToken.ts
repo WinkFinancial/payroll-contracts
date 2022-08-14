@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import {verifyContract} from '../utils/verifyContract';
 
 const version = 'v0.2.0';
 const contractName = 'Token';
@@ -33,24 +34,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         log: true,
       });
 
-      if (deployResult.newlyDeployed && deployResult.transactionHash) {
-        const blocks = 5;
-        console.log(`Waiting ${blocks} blocks before verifying`);
-        await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
-        try {
-          console.log(`Startig Verification of Payroll_Implementation ${deployResult.address}`);
-          await hre.run('verify:verify', {
-            address: deployResult.address,
-            constructorArguments: constructorArguments,
-          });
-        } catch (err: any) {
-          if (err.message.includes('Already Verified')) {
-            return;
-          } else {
-            throw err;
-          }
-        }
-      }
+      await verifyContract(network, deployResult, symbol, constructorArguments);
     };
 
     if (!jUSDT) {
