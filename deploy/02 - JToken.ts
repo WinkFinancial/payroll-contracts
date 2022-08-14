@@ -34,7 +34,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         log: true,
       });
 
-      await verifyContract(deployResult, symbol, constructorArguments);
+      await verifyContract(network, deployResult, symbol, constructorArguments);
     };
 
     if (!jUSDT) {

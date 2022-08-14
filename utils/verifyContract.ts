@@ -1,5 +1,6 @@
 import {ethers, run} from 'hardhat';
 import {DeployResult} from 'hardhat-deploy/types';
+import {Network} from 'hardhat/types';
 
 export type TaskArgs = {
   address: string;
@@ -7,11 +8,12 @@ export type TaskArgs = {
 };
 
 export const verifyContract = async (
+  network: Network,
   deployResult: DeployResult,
   contractName: string,
   constructorArguments?: string[]
 ) => {
-  if (deployResult.newlyDeployed && deployResult.transactionHash) {
+  if (network.live && network.name !== 'rsk' && deployResult.newlyDeployed && deployResult.transactionHash) {
     const blocks = 5;
     const address = deployResult.implementation || deployResult.address;
     const taskArgs: TaskArgs = {address};
