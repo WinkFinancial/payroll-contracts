@@ -43,7 +43,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       log: true,
     });
 
-    if (deployResult.newlyDeployed && deployResult.transactionHash && network.live) {
+    if (deployResult.newlyDeployed && deployResult.transactionHash && network.live && network.name !== 'rsk') {
       const blocks = 5;
       console.log(`Waiting ${blocks} blocks before verifying`);
       await hre.ethers.provider.waitForTransaction(deployResult.transactionHash, blocks);
