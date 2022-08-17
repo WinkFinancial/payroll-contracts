@@ -88,6 +88,8 @@ Ethereum Mainnet: 0x5bCe0AbAbA89e1d0e063978d87CfF2f8f5145942 https://etherscan.i
 
 Binance Smart Chain Mainnet: 0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e https://bscscan.com/address/0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e
 
+Polygon: 0x8441F4b54EC3E641d6144415AB2381315d7BC8Ec https://polygonscan.com/address/0x8441F4b54EC3E641d6144415AB2381315d7BC8Ec
+
 Rinkeby: 0x977AfF4027BeFCcB5D5a476c69447382232Ef339 https://rinkeby.etherscan.io/address/0x977AfF4027BeFCcB5D5a476c69447382232Ef339
 
 Binance Smart Chain Testnet: 0x4d995D5B936889B9A26A12B7b48a22A80F226fde https://testnet.bscscan.com/address/0x4d995D5B936889B9A26A12B7b48a22A80F226fde
