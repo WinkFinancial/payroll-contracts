@@ -23,7 +23,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const chainId = network.config.chainId || 0;
     const tokens = tokensByChainId[chainId] || [];
 
-    const tokensToApprove = tokens.map((x) => x.address);
+    const tokensToApprove = tokens
+      .filter((x) => x.address && x.address !== ethers.constants.AddressZero)
+      .map((x) => x.address);
     if (!tokensToApprove.length) {
       console.log('No tokens to approve');
       return;
@@ -33,7 +35,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
     await instance.approveTokens(tokensToApprove);
     console.log('Approved Tokens');
-
   }
 
   // We recommend this pattern to be able to use async/await everywhere
