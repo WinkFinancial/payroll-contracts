@@ -15,26 +15,26 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-    console.log(`Approving ${contractName} ${version}`);
     const {deployments, network, ethers} = hre;
 
-    if (network.live) {
-      const chainId = network.config.chainId || 0;
-      const tokens = tokensByChainId[chainId] || [];
+    if (!network.live) return;
+    console.log(`Approving ${contractName} ${version}`);
 
-      const tokensToApprove = tokens.map((x) => x.address);
-      if (!tokensToApprove.length) {
-        console.log('No tokens to approve');
-        return;
-      }
+    const chainId = network.config.chainId || 0;
+    const tokens = tokensByChainId[chainId] || [];
 
-      const Payroll = await deployments.get('Payroll');
-      const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
-      await instance.approveTokens(tokensToApprove);
-      console.log('Approved Tokens');
+    const tokensToApprove = tokens
+      .filter((x) => x.address && x.address !== ethers.constants.AddressZero)
+      .map((x) => x.address);
+    if (!tokensToApprove.length) {
+      console.log('No tokens to approve');
+      return;
     }
 
-    return true;
+    const Payroll = await deployments.get('Payroll');
+    const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
+    await instance.approveTokens(tokensToApprove);
+    console.log('Approved Tokens');
   }
 
   // We recommend this pattern to be able to use async/await everywhere
