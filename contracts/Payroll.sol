@@ -179,7 +179,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         require(_swaps.length > 0, "Payroll: Empty swaps");
         return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
@@ -254,12 +254,13 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         SwapV2[] calldata _swaps,
         Payment[] calldata _payments
     ) external payable nonReentrant {
-        require(isSwapV2, "Payroll: Not uniswapV2");
+        uint256 totalETHSpend = 0;
         if (_swaps.length > 0) {
-            _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+            totalETHSpend = totalETHSpend + _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
         }
+        totalETHSpend = totalETHSpend + _performMultiPayment(_payments);
 
-        _performMultiPayment(_payments);
+        returnETHLeftOver(totalETHSpend);
     }
 
     /**
@@ -274,10 +275,44 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
-        require(isSwapV2, "Payroll: Not uniswapV2");
+    ) external payable nonReentrant {
         require(_swaps.length > 0, "Payroll: Empty swaps");
-        return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        uint256 totalETHSpend = 0;
+        totalETHSpend = _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+
+        returnETHLeftOver(totalETHSpend);
+    }
+
+    function _performSwapV2(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps
+    ) internal returns (uint256) {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        uint256 totalETHSpend = 0;
+
+        if (_erc20TokenOrigin == address(0)) {
+            totalETHSpend = _performETHSwapV2(_deadline, _swaps);
+        } else {
+            _performERC20SwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+            uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+            if (leftOver > 0) {
+                // return the leftover of _erc20TokenOrigin
+                TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+            }
+        }
+
+        return totalETHSpend;
+    }
+
+    function returnETHLeftOver(uint256 _totalETHSpend) internal {
+        require(msg.value >= _totalETHSpend, "Payroll: totalETHSpend is greater than msg.value");
+        uint256 leftOver = msg.value - _totalETHSpend;
+        if (leftOver > 1) {
+            (bool success, ) = payable(msg.sender).call{value: leftOver}("");
+            require(success, "Payroll: ETH leftOver transfer failed");
+        }
     }
 
     /**
@@ -287,17 +322,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      */
-    function _performSwapV2(
+    function _performERC20SwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) internal returns (uint256) {
+    ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
 
-        uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
             require(_swaps[i].path[0] == _erc20TokenOrigin, "Payroll: Swap not token origin");
@@ -309,16 +343,35 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                 msg.sender,
                 _deadline
             )[0];
-            totalAmountIn = totalAmountIn + amountIn;
             address[] calldata path = _swaps[i].path;
             emit SwapFinished(_erc20TokenOrigin, path[path.length - 1], amountIn);
         }
+    }
 
-        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
-        if (leftOver > 0) {
-            // return the leftover of _erc20TokenOrigin
-            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+    /**
+     * Perform the swap with Uniswap V2 using token native as origin.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     */
+    function _performETHSwapV2(uint32 _deadline, SwapV2[] calldata _swaps) internal returns (uint256) {
+        address weth = IUniswapV2(swapRouter).WETH();
+
+        uint256 totalAmountIn = 0;
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            require(_swaps[i].path[0] == weth, "Payroll: Swap not native token");
+            // return the amount spend of tokenIn
+            uint256 amountIn = IUniswapV2(swapRouter).swapETHForExactTokens{value: _swaps[i].amountInMax}(
+                _swaps[i].amountOut,
+                _swaps[i].path,
+                msg.sender,
+                _deadline
+            )[0];
+            totalAmountIn = totalAmountIn + amountIn;
+            address[] calldata path = _swaps[i].path;
+            emit SwapFinished(weth, path[path.length - 1], amountIn);
         }
+
         return totalAmountIn;
     }
 
@@ -327,14 +380,16 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _payments The array of the Payment data.
      */
     function performMultiPayment(Payment[] calldata _payments) external payable nonReentrant {
-        _performMultiPayment(_payments);
+        uint256 totalETHSent = 0;
+        totalETHSent = _performMultiPayment(_payments);
+        returnETHLeftOver(totalETHSent);
     }
 
     /**
      * Perform the payments to the given addresses and amounts, internal method.
      * @param _payments The array of the Payment data.
      */
-    function _performMultiPayment(Payment[] calldata _payments) internal {
+    function _performMultiPayment(Payment[] calldata _payments) internal returns(uint256) {
         uint256 totalETHSent = 0;
         for (uint256 i = 0; i < _payments.length; i++) {
             require(_payments[i].amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
@@ -351,12 +406,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                     _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             }
         }
-
-        uint256 leftOver = msg.value - totalETHSent;
-        if (leftOver > 1) {
-            (bool success, ) = payable(msg.sender).call{value: leftOver}("");
-            require(success, "Payroll: ETH leftOver transfer failed");
-        }
+        return totalETHSent;
     }
 
     /**
@@ -421,4 +471,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
         return totalAmountSent;
     }
+
+    receive() external payable {}
 }

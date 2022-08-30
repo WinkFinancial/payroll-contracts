@@ -3,8 +3,8 @@ import {expect} from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {ethers, network} from 'hardhat';
 import {Payroll, Token} from '../typechain-types';
-import {PaymentStruct, SwapV2Struct} from '../typechain-types/Payroll';
-import {addLiquidity, createPair, deploy, DeployResult} from './helpers/uniswap';
+import {PaymentStruct, SwapV2Struct, SwapV3Struct} from '../typechain-types/Payroll';
+import {addLiquidity, addLiquidityETH, createPair, deploy, DeployResult} from './helpers/uniswap';
 
 let uniswapV2Router02: Contract;
 let tokenA: Token;
@@ -17,6 +17,7 @@ let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
 let feeAddress: SignerWithAddress;
+let uniswapV2: DeployResult;
 let deadline = 0;
 
 describe('Contract: Payroll UniV2', () => {
@@ -44,8 +45,8 @@ describe('Contract: Payroll UniV2', () => {
       tokenB = tmp;
     }
 
-    const deployResult: DeployResult = await deploy({owner: admin});
-    uniswapV2Router02 = deployResult.uniswapV2Router02;
+    uniswapV2 = await deploy({owner: admin});
+    uniswapV2Router02 = uniswapV2.uniswapV2Router02;
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
@@ -54,6 +55,7 @@ describe('Contract: Payroll UniV2', () => {
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);
     await createPair(tokenB.address, tokenD.address);
+    await createPair(tokenA.address, uniswapV2.WETH.address);
 
     await tokenA.approve(uniswapV2Router02.address, 10000000000000);
     await tokenB.approve(uniswapV2Router02.address, 10000000000000);
@@ -82,6 +84,13 @@ describe('Contract: Payroll UniV2', () => {
       amountA: BigNumber.from('1000000000000'),
       token1: tokenD,
       amountB: BigNumber.from('1000000000000'),
+    });
+
+    await addLiquidityETH({
+      owner: admin,
+      token0: tokenA,
+      token0mount: ethers.utils.parseEther('500.0'),
+      wethAmount: ethers.utils.parseEther('500.0'),
     });
 
     await tokenB.transfer(payer.address, 1000000);
@@ -173,6 +182,106 @@ describe('Contract: Payroll UniV2', () => {
       expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100);
       expect(newBalanceTokenC.sub(previousBalanceTokenC)).to.equal(100);
       expect(previousBalanceTokenB.sub(newBalanceTokenB).toNumber()).to.be.closeTo(200, 2);
+    });
+
+    it('should only swap native token', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: 100,
+          amountInMax: 150,
+          path: [uniswapV2.WETH.address, tokenA.address],
+        },
+      ];
+
+      const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
+
+      await payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 150, deadline, swaps, {
+        value: 150,
+      });
+
+      const newBalanceTokenA = await tokenA.balanceOf(payer.address);
+
+      expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100);
+    });
+
+    it('should swap native token and transfer', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: 150,
+          amountInMax: 200,
+          path: [uniswapV2.WETH.address, tokenA.address],
+        },
+      ];
+
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenA.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address)
+      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address)
+
+      await payroll.connect(payer).performSwapV2AndPayment(ethers.constants.AddressZero, 0, deadline, swaps, payments, {
+        value: 300,
+      });
+
+      expect(await tokenA.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50))
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50))
+    });
+
+    it('should revert with an empty swap array', async () => {
+      await expect(
+        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, [])
+      ).to.be.revertedWith('Payroll: Empty swaps');
+    });
+
+    it('should revert when it try to use uniswapV3', async () => {
+      const swaps: SwapV3Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: ethers.utils.randomBytes(5)},
+      ];
+
+      await expect(
+        payroll.connect(payer).performSwapV3(tokenB.address, 500, deadline, swaps)
+      ).to.be.revertedWith('Payroll: Not uniswapV3');
+    });
+
+    it('should revert when a path is not sent', async () => {
+      const swaps: SwapV2Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: []},
+      ];
+
+      await expect(
+        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)
+      ).to.be.revertedWith('Payroll: Empty path');
+
+      await expect(
+        payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})
+      ).to.be.revertedWith('Payroll: Empty path');
+    });
+
+    it('should revert when path[0] in SwapStruct is not the token to swap', async () => {
+      const swaps: SwapV2Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: [tokenA.address, tokenC.address]},
+      ];
+
+      await expect(
+        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)
+      ).to.be.revertedWith('Payroll: Swap not token origin');
+
+      await expect(
+        payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})
+      ).to.be.revertedWith('Payroll: Swap not native token');
     });
 
     it('should only transfer', async () => {
