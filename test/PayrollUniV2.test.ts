@@ -195,7 +195,7 @@ describe('Contract: Payroll UniV2', () => {
 
       const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
 
-      await payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 150, deadline, swaps, {
+      await payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {
         value: 150,
       });
 
@@ -229,7 +229,7 @@ describe('Contract: Payroll UniV2', () => {
       const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
       const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
 
-      await payroll.connect(payer).performSwapV2AndPayment(ethers.constants.AddressZero, 0, deadline, swaps, payments, {
+      await payroll.connect(payer).performSwapV2AndPaymentETH(300, deadline, swaps, payments, {
         value: 300,
       });
 
@@ -244,6 +244,10 @@ describe('Contract: Payroll UniV2', () => {
       await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, [])).to.be.revertedWith(
         'Payroll: Empty swaps'
       );
+
+      await expect(payroll.connect(payer).performSwapV2ETH(500, deadline, [], {value: 500})).to.be.revertedWith(
+        'Payroll: Empty swaps'
+      );
     });
 
     it('should revert when it try to use uniswapV3', async () => {
@@ -252,29 +256,57 @@ describe('Contract: Payroll UniV2', () => {
       await expect(payroll.connect(payer).performSwapV3(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
         'Payroll: Not uniswapV3'
       );
+
+      await expect(payroll.connect(payer).performSwapV3ETH(500, deadline, swaps, {value: 500})).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Not uniswapV3');
+
+      await expect(payroll.connect(payer).performSwapV3AndPaymentETH(500, deadline, swaps, [])).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
     });
 
     it('should revert when a path is not sent', async () => {
       const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: []}];
 
-      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 150, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Empty path'
+      );
+
+      await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 150})).to.be.revertedWith(
         'Payroll: Empty path'
       );
 
       await expect(
-        payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})
+        payroll.connect(payer).performSwapV2AndPayment(tokenB.address, 150, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Empty path');
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPaymentETH(150, deadline, swaps, [], {value: 150})
       ).to.be.revertedWith('Payroll: Empty path');
     });
 
     it('should revert when path[0] in SwapStruct is not the token to swap', async () => {
       const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: [tokenA.address, tokenC.address]}];
 
-      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 150, deadline, swaps)).to.be.revertedWith(
         'Payroll: Swap not token origin'
       );
 
+      await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 150})).to.be.revertedWith(
+        'Payroll: Swap not native token'
+      );
+
       await expect(
-        payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})
+        payroll.connect(payer).performSwapV2AndPayment(tokenB.address, 150, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Swap not token origin');
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPaymentETH(150, deadline, swaps, [], {value: 150})
       ).to.be.revertedWith('Payroll: Swap not native token');
     });
 
