@@ -159,12 +159,13 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         SwapV3[] calldata _swaps,
         Payment[] calldata _payments
     ) external payable nonReentrant {
-        require(!isSwapV2, "Payroll: Not uniswapV3");
+        uint256 totalETHSpend = 0;
         if (_swaps.length > 0) {
-            _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+            totalETHSpend = totalETHSpend + _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
         }
+        totalETHSpend = totalETHSpend + _performMultiPayment(_payments);
 
-        _performMultiPayment(_payments);
+        returnETHLeftOver(totalETHSpend);
     }
 
     /**
@@ -179,10 +180,12 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external payable nonReentrant returns (uint256) {
-        require(!isSwapV2, "Payroll: Not uniswapV3");
+    ) external payable nonReentrant {
         require(_swaps.length > 0, "Payroll: Empty swaps");
-        return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        uint256 totalETHSpend = 0;
+        totalETHSpend = _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+
+        returnETHLeftOver(totalETHSpend);
     }
 
     /**
@@ -198,11 +201,33 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         uint32 _deadline,
         SwapV3[] calldata _swaps
     ) internal returns (uint256) {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
+        uint256 totalETHSpend = 0;
+
+        if (_erc20TokenOrigin == address(0)) {
+            totalETHSpend = _performETHSwapV3(_deadline, _swaps);
+        } else {
+            _performERC20SwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+            uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+            if (leftOver > 0) {
+                // return the leftover of _erc20TokenOrigin
+                TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+            }
+        }
+
+        return totalETHSpend;
+    }
+
+    function _performERC20SwapV3(
+        address _erc20TokenOrigin,
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV3[] calldata _swaps
+    ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
 
-        uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
             uint256 amountIn = IUniswapV3(swapRouter).exactOutput(
@@ -214,15 +239,31 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                     amountInMaximum: _swaps[i].amountInMax
                 })
             );
-            totalAmountIn = totalAmountIn + amountIn;
             emit SwapFinished(_erc20TokenOrigin, _swaps[i].path.toAddress(0), amountIn);
         }
+    }
 
-        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
-        if (leftOver > 0) {
-            // return the leftover of _erc20TokenOrigin
-            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+    function _performETHSwapV3(uint32 _deadline, SwapV3[] calldata _swaps) internal returns (uint256) {
+        address weth = IUniswapV3(swapRouter).WETH9();
+
+        uint256 totalAmountIn = 0;
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            uint256 amountIn = IUniswapV3(swapRouter).exactOutput{value: _swaps[i].amountInMax}(
+                IUniswapV3.ExactOutputParams({
+                    path: _swaps[i].path,
+                    recipient: msg.sender,
+                    deadline: _deadline,
+                    amountOut: _swaps[i].amountOut,
+                    amountInMaximum: _swaps[i].amountInMax
+                })
+            );
+            totalAmountIn = totalAmountIn + amountIn;
+            emit SwapFinished(weth, _swaps[i].path.toAddress(0), amountIn);
         }
+
+        IUniswapV3(swapRouter).refundETH();
+
         return totalAmountIn;
     }
 
@@ -389,7 +430,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * Perform the payments to the given addresses and amounts, internal method.
      * @param _payments The array of the Payment data.
      */
-    function _performMultiPayment(Payment[] calldata _payments) internal returns(uint256) {
+    function _performMultiPayment(Payment[] calldata _payments) internal returns (uint256) {
         uint256 totalETHSent = 0;
         for (uint256 i = 0; i < _payments.length; i++) {
             require(_payments[i].amountsToTransfer.length > 0, "Payroll: No amounts to transfer");

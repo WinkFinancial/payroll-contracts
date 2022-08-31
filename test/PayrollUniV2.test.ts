@@ -226,8 +226,8 @@ describe('Contract: Payroll UniV2', () => {
         },
       ];
 
-      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address)
-      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address)
+      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
+      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
 
       await payroll.connect(payer).performSwapV2AndPayment(ethers.constants.AddressZero, 0, deadline, swaps, payments, {
         value: 300,
@@ -236,34 +236,30 @@ describe('Contract: Payroll UniV2', () => {
       expect(await tokenA.balanceOf(userA.address)).to.equal(50);
       expect(await tokenA.balanceOf(userB.address)).to.equal(50);
 
-      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50))
-      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50))
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
     });
 
     it('should revert with an empty swap array', async () => {
-      await expect(
-        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, [])
-      ).to.be.revertedWith('Payroll: Empty swaps');
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, [])).to.be.revertedWith(
+        'Payroll: Empty swaps'
+      );
     });
 
     it('should revert when it try to use uniswapV3', async () => {
-      const swaps: SwapV3Struct[] = [
-        {amountOut: 100, amountInMax: 150, path: ethers.utils.randomBytes(5)},
-      ];
+      const swaps: SwapV3Struct[] = [{amountOut: 100, amountInMax: 150, path: ethers.utils.randomBytes(5)}];
 
-      await expect(
-        payroll.connect(payer).performSwapV3(tokenB.address, 500, deadline, swaps)
-      ).to.be.revertedWith('Payroll: Not uniswapV3');
+      await expect(payroll.connect(payer).performSwapV3(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
     });
 
     it('should revert when a path is not sent', async () => {
-      const swaps: SwapV2Struct[] = [
-        {amountOut: 100, amountInMax: 150, path: []},
-      ];
+      const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: []}];
 
-      await expect(
-        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)
-      ).to.be.revertedWith('Payroll: Empty path');
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Empty path'
+      );
 
       await expect(
         payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})
@@ -271,13 +267,11 @@ describe('Contract: Payroll UniV2', () => {
     });
 
     it('should revert when path[0] in SwapStruct is not the token to swap', async () => {
-      const swaps: SwapV2Struct[] = [
-        {amountOut: 100, amountInMax: 150, path: [tokenA.address, tokenC.address]},
-      ];
+      const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: [tokenA.address, tokenC.address]}];
 
-      await expect(
-        payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)
-      ).to.be.revertedWith('Payroll: Swap not token origin');
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Swap not token origin'
+      );
 
       await expect(
         payroll.connect(payer).performSwapV2(ethers.constants.AddressZero, 0, deadline, swaps, {value: 150})

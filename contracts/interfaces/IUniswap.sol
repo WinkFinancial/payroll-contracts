@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 interface IUniswapV2 {
     //Uniswap V2
     function WETH() external pure returns (address);
-    
+
     function swapTokensForExactTokens(
         uint256 amountOut,
         uint256 amountInMax,
@@ -50,6 +50,10 @@ interface IUniswapV3 {
         uint256 amountOut;
         uint256 amountInMaximum;
     }
+
+    function WETH9() external pure returns (address);
+
+    function refundETH() external payable;
 
     /// @notice Swaps as little as possible of one token for `amountOut` of another token
     /// @param params The parameters necessary for the swap, encoded as `ExactOutputSingleParams` in calldata
