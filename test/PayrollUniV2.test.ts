@@ -263,7 +263,9 @@ describe('Contract: Payroll UniV2', () => {
     });
 
     it('should revert when not enough ETH is sent to swap', async () => {
-      const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: [uniswapV2.WETH.address, tokenA.address]}];
+      const swaps: SwapV2Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: [uniswapV2.WETH.address, tokenA.address]},
+      ];
 
       await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 100})).to.be.revertedWith(
         'Payroll: Not enough msg.value'

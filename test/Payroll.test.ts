@@ -288,9 +288,7 @@ describe('Contract: Payroll', () => {
     });
 
     it('should revert because set 0 as version', async () => {
-      await expect(payroll.setVersion(0)).to.be.revertedWith(
-        'Payroll: Version can\'t be 0'
-      );
+      await expect(payroll.setVersion(0)).to.be.revertedWith("Payroll: Version can't be 0");
     });
   });
 });
