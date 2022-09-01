@@ -150,7 +150,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ERC20 to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV3AndPayment(
         address _erc20TokenOrigin,
@@ -174,7 +175,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ETH to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV3AndPaymentETH(
         uint256 _totalAmountToSwap,
@@ -198,6 +200,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ERC20 to ERC20.
      */
     function performSwapV3(
         address _erc20TokenOrigin,
@@ -215,6 +218,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ETH to ERC20.
      */
     function performSwapV3ETH(
         uint256 _totalAmountToSwap,
@@ -282,18 +286,20 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             emit SwapFinished(weth, _swaps[i].path.toAddress(0), amountIn);
         }
 
+        // Explicitly request ETH refound
         IUniswapV3(swapRouter).refundETH();
         return totalAmountIn;
     }
 
     /**
-     * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ERC20 to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV2AndPayment(
         address _erc20TokenOrigin,
@@ -312,12 +318,13 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ETH to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV2AndPaymentETH(
         uint256 _totalAmountToSwap,
@@ -341,6 +348,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ERC20 to ERC20.
      */
     function performSwapV2(
         address _erc20TokenOrigin,
@@ -358,6 +366,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ETH to ERC20.
      */
     function performSwapV2ETH(
         uint256 _totalAmountToSwap,
@@ -370,13 +379,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         refundETH(totalETHSpend);
     }
 
-    /**
-     * Perform the swap with Uniswap V2 to the given token addresses and amounts.
-     * @param _erc20TokenOrigin ERC20 token address to swap for another.
-     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
-     * @param _deadline The unix timestamp after a swap will fail.
-     * @param _swaps The array of the Swaps data.
-     */
     function _performSwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
@@ -409,11 +411,6 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
     }
 
-    /**
-     * Perform the swap with Uniswap V2 using token native as origin.
-     * @param _deadline The unix timestamp after a swap will fail.
-     * @param _swaps The array of the Swaps data.
-     */
     function _performSwapV2ETH(
         uint256 _totalAmountToSwap,
         uint32 _deadline,
@@ -444,16 +441,13 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     /**
      * Perform the payments to the given addresses and amounts, public method.
      * @param _payments The array of the Payment data.
+     * @notice Available to send ETH or ERC20.
      */
     function performMultiPayment(Payment[] calldata _payments) external payable nonReentrant {
         uint256 totalETHSent = _performMultiPayment(_payments);
         refundETH(totalETHSent);
     }
 
-    /**
-     * Perform the payments to the given addresses and amounts, internal method.
-     * @param _payments The array of the Payment data.
-     */
     function _performMultiPayment(Payment[] calldata _payments) internal returns (uint256) {
         uint256 totalETHSent = 0;
         for (uint256 i = 0; i < _payments.length; i++) {
@@ -537,6 +531,10 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         return totalAmountSent;
     }
 
+    /**
+     * Perform the refound of the leftover ETH.
+     * @param _totalETHSpend The ETH amount spend.
+     */
     function refundETH(uint256 _totalETHSpend) internal {
         require(msg.value >= _totalETHSpend, "Payroll: totalETHSpend is greater than msg.value");
         uint256 leftOver = msg.value - _totalETHSpend;
