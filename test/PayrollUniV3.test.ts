@@ -91,12 +91,13 @@ describe('Contract: Payroll UniV3', () => {
     await pool.createPool(tokenA.address, tokenB.address, poolFee, encodePriceSqrt(1, 1));
     await pool.createPool(tokenC.address, tokenB.address, poolFee, encodePriceSqrt(1, 1));
     await pool.createPool(weth.address, tokenA.address, poolFee, encodePriceSqrt(1, 1));
+    await pool.createPool(weth.address, tokenC.address, poolFee, encodePriceSqrt(1, 1));
     await tokenA.approve(pool.address, 10000000000000);
     await tokenB.approve(pool.address, 10000000000000);
     await tokenC.approve(pool.address, 10000000000000);
     await weth.approve(pool.address, 10000000000000);
 
-    await weth.deposit({value: 100000000000});
+    await weth.deposit({value: 500000000000});
 
     await pool.mintNewPosition(
       tokenA.address,
@@ -121,6 +122,16 @@ describe('Contract: Payroll UniV3', () => {
     await pool.mintNewPosition(
       weth.address,
       tokenA.address,
+      poolFee,
+      getMinTick(3000),
+      getMaxTick(3000),
+      100000000000,
+      100000000000
+    );
+
+    await pool.mintNewPosition(
+      weth.address,
+      tokenC.address,
       poolFee,
       getMinTick(3000),
       getMaxTick(3000),
@@ -228,6 +239,11 @@ describe('Contract: Payroll UniV3', () => {
           amountInMax: 200,
           path: getPath(tokenA.address, poolFee, weth.address),
         },
+        {
+          amountOut: 150,
+          amountInMax: 200,
+          path: getPath(tokenC.address, poolFee, weth.address),
+        },
       ];
 
       const payments: PaymentStruct[] = [
@@ -235,6 +251,11 @@ describe('Contract: Payroll UniV3', () => {
           token: tokenA.address,
           receivers: [userA.address, userB.address],
           amountsToTransfer: [50, 50],
+        },
+        {
+          token: tokenC.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [75, 75],
         },
         {
           token: ethers.constants.AddressZero,
@@ -247,14 +268,30 @@ describe('Contract: Payroll UniV3', () => {
       const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
 
       await payroll.connect(payer).performSwapV3AndPaymentETH(300, deadline, swaps, payments, {
-        value: 300,
+        value: 500,
       });
 
       expect(await tokenA.balanceOf(userA.address)).to.equal(50);
       expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(50);
+
+      expect(await tokenC.balanceOf(userA.address)).to.equal(75);
+      expect(await tokenC.balanceOf(userB.address)).to.equal(75);
 
       expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
       expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
+    });
+
+    it('should revert when not enough ETH is sent to swap', async () => {
+      const swaps: SwapV3Struct[] = [{amountOut: 100, amountInMax: 150, path: ethers.utils.randomBytes(5)}];
+
+      await expect(payroll.connect(payer).performSwapV3ETH(150, deadline, swaps, {value: 100})).to.be.revertedWith(
+        'Payroll: Not enough msg.value'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV3AndPaymentETH(150, deadline, swaps, [], {value: 100})
+      ).to.be.revertedWith('Payroll: Not enough msg.value');
     });
 
     it('should revert with an empty swap array', async () => {
