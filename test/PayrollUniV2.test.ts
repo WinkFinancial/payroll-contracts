@@ -101,7 +101,7 @@ describe('Contract: Payroll UniV2', () => {
       wethAmount: ethers.utils.parseEther('100.0'),
     });
 
-    await tokenB.transfer(payer.address, 1000000);
+    await tokenB.transfer(payer.address, ethers.utils.parseEther('100.0'));
 
     const timestamp = Date.now() + 1000 * 60 * 60;
     deadline = Math.floor(timestamp / 1000);
@@ -109,9 +109,9 @@ describe('Contract: Payroll UniV2', () => {
 
   describe('Tokens Approved', () => {
     beforeEach(async () => {
-      await tokenB.connect(payer).approve(payroll.address, 1000000);
-      await tokenA.connect(payer).approve(payroll.address, 1000000);
-      await tokenC.connect(payer).approve(payroll.address, 1000000);
+      await tokenB.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
+      await tokenA.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
+      await tokenC.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
       await payroll.approveTokens([tokenA.address, tokenB.address, tokenC.address]);
     });
 
@@ -192,7 +192,7 @@ describe('Contract: Payroll UniV2', () => {
       expect(previousBalanceTokenB.sub(newBalanceTokenB).toNumber()).to.be.closeTo(200, 2);
     });
 
-    it('should only swap native token', async () => {
+    it('should only swap from native token to erc20', async () => {
       const swaps: SwapV2Struct[] = [
         {
           amountOut: 100,
@@ -210,6 +210,99 @@ describe('Contract: Payroll UniV2', () => {
       const newBalanceTokenA = await tokenA.balanceOf(payer.address);
 
       expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100);
+    });
+
+    it('should only swap from erc20 to native token', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      await payroll.connect(payer).performSwapV2(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps);
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
+    });
+
+    it('should only swap from erc20 to native token using performSwapV2AndPayment', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      await payroll.connect(payer).performSwapV2AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, []);
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
+    });
+
+    it('should swap from erc20 to native token and transfer', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenA.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+        {
+          token: tokenB.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [75, 75],
+        },
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
+      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
+
+      await payroll.connect(payer).performSwapV2AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, payments);
+
+      expect(await tokenA.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+
+      expect(await tokenB.balanceOf(userA.address)).to.equal(75);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(75);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
     });
 
     it('should swap native token and transfer', async () => {
