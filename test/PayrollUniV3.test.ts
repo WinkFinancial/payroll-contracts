@@ -251,7 +251,10 @@ describe('Contract: Payroll UniV3', () => {
 
       await payroll.connect(payer).performSwapV3(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps);
 
-      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
     });
 
     it('should only swap from erc20 to native token using performSwapV3AndPayment', async () => {
@@ -270,9 +273,14 @@ describe('Contract: Payroll UniV3', () => {
         value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
       });
 
-      await payroll.connect(payer).performSwapV3AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, []);
+      await payroll
+        .connect(payer)
+        .performSwapV3AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, []);
 
-      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
     });
 
     it('should swap from erc20 to native token and transfer', async () => {
@@ -312,7 +320,9 @@ describe('Contract: Payroll UniV3', () => {
       const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
       const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
 
-      await payroll.connect(payer).performSwapV3AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, payments);
+      await payroll
+        .connect(payer)
+        .performSwapV3AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, payments);
 
       expect(await tokenA.balanceOf(userA.address)).to.equal(50);
       expect(await tokenA.balanceOf(userB.address)).to.equal(50);
@@ -323,7 +333,10 @@ describe('Contract: Payroll UniV3', () => {
       expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
       expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
 
-      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(ethers.utils.parseEther('1.0'), ethers.utils.parseEther('0.1'));
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
     });
 
     it('should swap native token and transfer', async () => {
@@ -439,7 +452,9 @@ describe('Contract: Payroll UniV3', () => {
     });
 
     it('should revert when path[0] in SwapStruct is not the token to swap', async () => {
-      const swaps: SwapV3Struct[] = [{amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenC.address)}];
+      const swaps: SwapV3Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: getPath(tokenA.address, poolFee, tokenC.address)},
+      ];
 
       await expect(payroll.connect(payer).performSwapV3(tokenB.address, 150, deadline, swaps)).to.be.revertedWith(
         'Payroll: Swap not token origin'

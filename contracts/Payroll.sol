@@ -246,7 +246,10 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
 
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
-            require(_swaps[i].path.toAddress(_swaps[i].path.length - 20) == _erc20TokenOrigin, "Payroll: Swap not token origin");
+            require(
+                _swaps[i].path.toAddress(_swaps[i].path.length - 20) == _erc20TokenOrigin,
+                "Payroll: Swap not token origin"
+            );
             // get the token to swap, it is at position 0 of the byte array
             address tokenTo = _swaps[i].path.toAddress(0);
 
