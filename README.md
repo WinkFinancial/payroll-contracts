@@ -104,3 +104,4 @@ RSK Testnet: 0x18c42168D834c99E2e7a368a5Fbf39F5BB32e09D https://explorer.testnet
 
 Polygon Mumbai Testnet: 0x46c60C1b5f756c8B6AA10A7d838380AD1B5F28BE https://mumbai.polygonscan.com/address/0x46c60C1b5f756c8B6AA10A7d838380AD1B5F28BE
 
+Evmos Testnet: 0x50ebdcAa518D66671Dfd57E027729f3630119Ccf https://evm.evmos.dev/address/0x50ebdcAa518D66671Dfd57E027729f3630119Ccf
