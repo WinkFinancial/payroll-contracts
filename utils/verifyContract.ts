@@ -2,7 +2,7 @@ import {ethers, run} from 'hardhat';
 import {DeployResult} from 'hardhat-deploy/types';
 import {Network} from 'hardhat/types';
 
-const NETWORKS_NOT_SUPPORTED = ['rsk', 'rskTestnet', 'evmos', 'evmosTestnet']
+const NETWORKS_NOT_SUPPORTED = ['rsk', 'rskTestnet', 'evmos', 'evmosTestnet'];
 
 export type TaskArgs = {
   address: string;
@@ -15,7 +15,12 @@ export const verifyContract = async (
   contractName: string,
   constructorArguments?: string[]
 ) => {
-  if (network.live && !NETWORKS_NOT_SUPPORTED.includes(network.name) && deployResult.newlyDeployed && deployResult.transactionHash) {
+  if (
+    network.live &&
+    !NETWORKS_NOT_SUPPORTED.includes(network.name) &&
+    deployResult.newlyDeployed &&
+    deployResult.transactionHash
+  ) {
     const blocks = 5;
     const address = deployResult.implementation || deployResult.address;
     const taskArgs: TaskArgs = {address};
