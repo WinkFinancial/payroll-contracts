@@ -21,6 +21,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     30: 0,
     31: 0, // For testnet use first account
     137: 0,
+    9000: 0, // For testnet use first account
+    9001: 0,
     80001: 0, // For testnet use first account
   },
   swapRouter: {
@@ -34,6 +36,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     30: '0xf55c496bb1058690DB1401c4b9C19F3f44374961', // rskswap v2
     31: '0xf55c496bb1058690DB1401c4b9C19F3f44374961', // rskswap v2
     137: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
+    9000: '0x72bd489d3cF0e9cC36af6e306Ff53E56d0f9EFb4', // diffusion.fi v2
+    9001: '0xFCd2Ce20ef8ed3D43Ab4f8C2dA13bbF1C6d9512F', // diffusion.fi v2
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
   },
   jUSDT: {
@@ -67,6 +71,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     30: 'true',
     31: 'true',
     137: 'true',
+    9000: 'true',
+    9001: 'true',
     80001: 'true',
   },
 };

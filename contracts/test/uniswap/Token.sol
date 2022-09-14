@@ -9,7 +9,7 @@ contract Token is ERC20, AccessControl {
     bytes32 public constant BURNER = keccak256("BURNER");
 
     constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {
-        _mint(msg.sender, 10000000 * (10**uint256(decimals())));
+        _mint(msg.sender, 1000000000000 * (10**uint256(decimals())));
         _setupRole(ADMIN, msg.sender);
         _setRoleAdmin(MINTER, ADMIN);
         _setRoleAdmin(BURNER, ADMIN);
