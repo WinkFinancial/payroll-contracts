@@ -115,6 +115,26 @@ if (mnemonic) {
     },
     tags: ['staging'],
   };
+
+  networks.evmos = {
+    live: true,
+    chainId: 9001,
+    url: 'https://eth.bd.evmos.org:8545',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['prod'],
+  };
+
+  networks.evmosTestnet = {
+    live: true,
+    chainId: 9000,
+    url: 'https://eth.bd.evmos.dev:8545',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['staging'],
+  };
 }
 
 if (infuraApiKey && mnemonic) {
