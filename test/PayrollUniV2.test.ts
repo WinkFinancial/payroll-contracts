@@ -3,8 +3,8 @@ import {expect} from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {ethers, network} from 'hardhat';
 import {Payroll, Token} from '../typechain-types';
-import {PaymentStruct, SwapV2Struct} from '../typechain-types/Payroll';
-import {addLiquidity, createPair, deploy, DeployResult} from './helpers/uniswap';
+import {PaymentStruct, SwapV2Struct, SwapV3Struct} from '../typechain-types/Payroll';
+import {addLiquidity, addLiquidityETH, createPair, deploy, DeployResult} from './helpers/uniswap';
 
 let uniswapV2Router02: Contract;
 let tokenA: Token;
@@ -17,6 +17,7 @@ let payer: SignerWithAddress;
 let userA: SignerWithAddress;
 let userB: SignerWithAddress;
 let feeAddress: SignerWithAddress;
+let uniswapV2: DeployResult;
 let deadline = 0;
 
 describe('Contract: Payroll UniV2', () => {
@@ -44,8 +45,8 @@ describe('Contract: Payroll UniV2', () => {
       tokenB = tmp;
     }
 
-    const deployResult: DeployResult = await deploy({owner: admin});
-    uniswapV2Router02 = deployResult.uniswapV2Router02;
+    uniswapV2 = await deploy({owner: admin});
+    uniswapV2Router02 = uniswapV2.uniswapV2Router02;
 
     const Payroll = await ethers.getContractFactory('Payroll');
     payroll = (await Payroll.deploy()) as Payroll;
@@ -54,6 +55,8 @@ describe('Contract: Payroll UniV2', () => {
     await createPair(tokenA.address, tokenB.address);
     await createPair(tokenC.address, tokenB.address);
     await createPair(tokenB.address, tokenD.address);
+    await createPair(tokenA.address, uniswapV2.WETH.address);
+    await createPair(tokenC.address, uniswapV2.WETH.address);
 
     await tokenA.approve(uniswapV2Router02.address, 10000000000000);
     await tokenB.approve(uniswapV2Router02.address, 10000000000000);
@@ -84,7 +87,21 @@ describe('Contract: Payroll UniV2', () => {
       amountB: BigNumber.from('1000000000000'),
     });
 
-    await tokenB.transfer(payer.address, 1000000);
+    await addLiquidityETH({
+      owner: admin,
+      token0: tokenA,
+      token0mount: ethers.utils.parseEther('100.0'),
+      wethAmount: ethers.utils.parseEther('100.0'),
+    });
+
+    await addLiquidityETH({
+      owner: admin,
+      token0: tokenC,
+      token0mount: ethers.utils.parseEther('100.0'),
+      wethAmount: ethers.utils.parseEther('100.0'),
+    });
+
+    await tokenB.transfer(payer.address, ethers.utils.parseEther('100.0'));
 
     const timestamp = Date.now() + 1000 * 60 * 60;
     deadline = Math.floor(timestamp / 1000);
@@ -92,9 +109,9 @@ describe('Contract: Payroll UniV2', () => {
 
   describe('Tokens Approved', () => {
     beforeEach(async () => {
-      await tokenB.connect(payer).approve(payroll.address, 1000000);
-      await tokenA.connect(payer).approve(payroll.address, 1000000);
-      await tokenC.connect(payer).approve(payroll.address, 1000000);
+      await tokenB.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
+      await tokenA.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
+      await tokenC.connect(payer).approve(payroll.address, ethers.utils.parseEther('1000.0'));
       await payroll.approveTokens([tokenA.address, tokenB.address, tokenC.address]);
     });
 
@@ -173,6 +190,266 @@ describe('Contract: Payroll UniV2', () => {
       expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100);
       expect(newBalanceTokenC.sub(previousBalanceTokenC)).to.equal(100);
       expect(previousBalanceTokenB.sub(newBalanceTokenB).toNumber()).to.be.closeTo(200, 2);
+    });
+
+    it('should only swap from native token to erc20', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: 100,
+          amountInMax: 150,
+          path: [uniswapV2.WETH.address, tokenA.address],
+        },
+      ];
+
+      const previousBalanceTokenA = await tokenA.balanceOf(payer.address);
+
+      await payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {
+        value: 150,
+      });
+
+      const newBalanceTokenA = await tokenA.balanceOf(payer.address);
+
+      expect(newBalanceTokenA.sub(previousBalanceTokenA)).to.equal(100);
+    });
+
+    it('should only swap from erc20 to native token', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      await payroll.connect(payer).performSwapV2(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps);
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
+    });
+
+    it('should only swap from erc20 to native token using performSwapV2AndPayment', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      await payroll
+        .connect(payer)
+        .performSwapV2AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, []);
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
+    });
+
+    it('should swap from erc20 to native token and transfer', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: ethers.utils.parseEther('1.0'),
+          amountInMax: ethers.utils.parseEther('1.5'),
+          path: [tokenA.address, uniswapV2.WETH.address],
+        },
+      ];
+
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenA.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+        {
+          token: tokenB.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [75, 75],
+        },
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      await tokenA.transfer(payer.address, ethers.utils.parseEther('5.0'));
+
+      await payer.sendTransaction({
+        to: ethers.constants.AddressZero,
+        value: (await ethers.provider.getBalance(payer.address)).sub(ethers.utils.parseEther('0.1')),
+      });
+
+      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
+      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
+
+      await payroll
+        .connect(payer)
+        .performSwapV2AndPayment(tokenA.address, ethers.utils.parseEther('1.5'), deadline, swaps, payments);
+
+      expect(await tokenA.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+
+      expect(await tokenB.balanceOf(userA.address)).to.equal(75);
+      expect(await tokenB.balanceOf(userB.address)).to.equal(75);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
+
+      expect(await ethers.provider.getBalance(payer.address)).to.be.closeTo(
+        ethers.utils.parseEther('1.0'),
+        ethers.utils.parseEther('0.1')
+      );
+    });
+
+    it('should swap native token and transfer', async () => {
+      const swaps: SwapV2Struct[] = [
+        {
+          amountOut: 150,
+          amountInMax: 200,
+          path: [uniswapV2.WETH.address, tokenA.address],
+        },
+        {
+          amountOut: 150,
+          amountInMax: 200,
+          path: [uniswapV2.WETH.address, tokenC.address],
+        },
+      ];
+
+      const payments: PaymentStruct[] = [
+        {
+          token: tokenA.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+        {
+          token: tokenC.address,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [75, 75],
+        },
+        {
+          token: ethers.constants.AddressZero,
+          receivers: [userA.address, userB.address],
+          amountsToTransfer: [50, 50],
+        },
+      ];
+
+      const previousBalanceNativeTokenUserA = await ethers.provider.getBalance(userA.address);
+      const previousBalanceNativeTokenUserB = await ethers.provider.getBalance(userB.address);
+
+      await payroll.connect(payer).performSwapV2AndPaymentETH(300, deadline, swaps, payments, {
+        value: 500,
+      });
+
+      expect(await tokenA.balanceOf(userA.address)).to.equal(50);
+      expect(await tokenA.balanceOf(userB.address)).to.equal(50);
+      expect(await tokenA.balanceOf(payer.address)).to.equal(50);
+
+      expect(await tokenC.balanceOf(userA.address)).to.equal(75);
+      expect(await tokenC.balanceOf(userB.address)).to.equal(75);
+
+      expect(await ethers.provider.getBalance(userA.address)).to.equal(previousBalanceNativeTokenUserA.add(50));
+      expect(await ethers.provider.getBalance(userB.address)).to.equal(previousBalanceNativeTokenUserB.add(50));
+    });
+
+    it('should revert when not enough ETH is sent to swap', async () => {
+      const swaps: SwapV2Struct[] = [
+        {amountOut: 100, amountInMax: 150, path: [uniswapV2.WETH.address, tokenA.address]},
+      ];
+
+      await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 100})).to.be.revertedWith(
+        'Payroll: Not enough msg.value'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPaymentETH(150, deadline, swaps, [], {value: 100})
+      ).to.be.revertedWith('Payroll: Not enough msg.value');
+    });
+
+    it('should revert with an empty swap array', async () => {
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 500, deadline, [])).to.be.revertedWith(
+        'Payroll: Empty swaps'
+      );
+
+      await expect(payroll.connect(payer).performSwapV2ETH(500, deadline, [], {value: 500})).to.be.revertedWith(
+        'Payroll: Empty swaps'
+      );
+    });
+
+    it('should revert when it try to use uniswapV3', async () => {
+      const swaps: SwapV3Struct[] = [{amountOut: 100, amountInMax: 150, path: ethers.utils.randomBytes(5)}];
+
+      await expect(payroll.connect(payer).performSwapV3(tokenB.address, 500, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
+
+      await expect(payroll.connect(payer).performSwapV3ETH(500, deadline, swaps, {value: 500})).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV3AndPayment(tokenB.address, 500, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Not uniswapV3');
+
+      await expect(payroll.connect(payer).performSwapV3AndPaymentETH(500, deadline, swaps, [])).to.be.revertedWith(
+        'Payroll: Not uniswapV3'
+      );
+    });
+
+    it('should revert when a path is not sent', async () => {
+      const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: []}];
+
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 150, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Empty path'
+      );
+
+      await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 150})).to.be.revertedWith(
+        'Payroll: Empty path'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPayment(tokenB.address, 150, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Empty path');
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPaymentETH(150, deadline, swaps, [], {value: 150})
+      ).to.be.revertedWith('Payroll: Empty path');
+    });
+
+    it('should revert when path[0] in SwapStruct is not the token to swap', async () => {
+      const swaps: SwapV2Struct[] = [{amountOut: 100, amountInMax: 150, path: [tokenA.address, tokenC.address]}];
+
+      await expect(payroll.connect(payer).performSwapV2(tokenB.address, 150, deadline, swaps)).to.be.revertedWith(
+        'Payroll: Swap not token origin'
+      );
+
+      await expect(payroll.connect(payer).performSwapV2ETH(150, deadline, swaps, {value: 150})).to.be.revertedWith(
+        'Payroll: Swap not native token'
+      );
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPayment(tokenB.address, 150, deadline, swaps, [])
+      ).to.be.revertedWith('Payroll: Swap not token origin');
+
+      await expect(
+        payroll.connect(payer).performSwapV2AndPaymentETH(150, deadline, swaps, [], {value: 150})
+      ).to.be.revertedWith('Payroll: Swap not native token');
     });
 
     it('should only transfer', async () => {

@@ -341,13 +341,7 @@
       }
     ],
     "name": "performSwapV2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -421,6 +415,108 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV2[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address[]",
+            "name": "receivers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amountsToTransfer",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct Payroll.Payment[]",
+        "name": "_payments",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV2AndPaymentETH",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV2[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV2ETH",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_erc20TokenOrigin",
         "type": "address"
@@ -459,13 +555,7 @@
       }
     ],
     "name": "performSwapV3",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -532,6 +622,108 @@
       }
     ],
     "name": "performSwapV3AndPayment",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV3[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address[]",
+            "name": "receivers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amountsToTransfer",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct Payroll.Payment[]",
+        "name": "_payments",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV3AndPaymentETH",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_totalAmountToSwap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_deadline",
+        "type": "uint32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountInMax",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Payroll.SwapV3[]",
+        "name": "_swaps",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "performSwapV3ETH",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -638,5 +830,9 @@
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]

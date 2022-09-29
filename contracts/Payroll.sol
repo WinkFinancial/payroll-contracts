@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IERC20Basic.sol";
+import "./interfaces/IWETH.sol";
 import "./interfaces/IUniswap.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "./BytesLib.sol";
@@ -150,7 +151,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ERC20 to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV3AndPayment(
         address _erc20TokenOrigin,
@@ -165,6 +167,31 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
 
         _performMultiPayment(_payments);
+        refundETH();
+    }
+
+    /**
+     * Perform the swap with Uniswap V3 and the transfer to the given addresses.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     * @param _payments The array of the Payment data.
+     * @notice Swap ETH to ERC20.
+     * @notice Available to send ETH or ERC20.
+     */
+    function performSwapV3AndPaymentETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV3[] calldata _swaps,
+        Payment[] calldata _payments
+    ) external payable nonReentrant {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
+        if (_swaps.length > 0) {
+            _performSwapV3ETH(_totalAmountToSwap, _deadline, _swaps);
+        }
+
+        _performMultiPayment(_payments);
+        refundETH();
     }
 
     /**
@@ -173,39 +200,109 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ERC20 to ERC20.
      */
     function performSwapV3(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
+    ) external nonReentrant {
         require(!isSwapV2, "Payroll: Not uniswapV3");
         require(_swaps.length > 0, "Payroll: Empty swaps");
-        return _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        _performSwapV3(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        refundETH();
     }
 
     /**
      * Perform the swap with Uniswap V3 to the given token addresses and amounts.
-     * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ETH to ERC20.
      */
+    function performSwapV3ETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV3[] calldata _swaps
+    ) external payable nonReentrant {
+        require(!isSwapV2, "Payroll: Not uniswapV3");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
+        _performSwapV3ETH(_totalAmountToSwap, _deadline, _swaps);
+        refundETH();
+    }
+
     function _performSwapV3(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV3[] calldata _swaps
-    ) internal returns (uint256) {
+    ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
+        address weth = IUniswapV3(swapRouter).WETH9();
+        uint256 amountIn = 0;
 
-        uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
-            uint256 amountIn = IUniswapV3(swapRouter).exactOutput(
+            require(
+                _swaps[i].path.toAddress(_swaps[i].path.length - 20) == _erc20TokenOrigin,
+                "Payroll: Swap not token origin"
+            );
+            // get the token to swap, it is at position 0 of the byte array
+            address tokenTo = _swaps[i].path.toAddress(0);
+
+            if (tokenTo == weth) {
+                // if tokenTo is WETH, the contract needs to receive it to convert it to ETH and use it in payments (if needed)
+                // then it will be refunded to msg.sender
+                amountIn = IUniswapV3(swapRouter).exactOutput(
+                    IUniswapV3.ExactOutputParams({
+                        path: _swaps[i].path,
+                        recipient: address(this),
+                        deadline: _deadline,
+                        amountOut: _swaps[i].amountOut,
+                        amountInMaximum: _swaps[i].amountInMax
+                    })
+                );
+
+                // receives WETH, so converts it to ETH
+                IWETH(weth).withdraw(_swaps[i].amountOut);
+            } else {
+                // if tokenTo is any ERC20 the recipient is the msg.sender
+                amountIn = IUniswapV3(swapRouter).exactOutput(
+                    IUniswapV3.ExactOutputParams({
+                        path: _swaps[i].path,
+                        recipient: msg.sender,
+                        deadline: _deadline,
+                        amountOut: _swaps[i].amountOut,
+                        amountInMaximum: _swaps[i].amountInMax
+                    })
+                );
+            }
+
+            emit SwapFinished(_erc20TokenOrigin, tokenTo, amountIn);
+        }
+
+        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
+        if (leftOver > 0) {
+            // return the leftover of _erc20TokenOrigin
+            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
+        }
+    }
+
+    function _performSwapV3ETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV3[] calldata _swaps
+    ) internal {
+        require(msg.value >= _totalAmountToSwap, "Payroll: Not enough msg.value");
+        address weth = IUniswapV3(swapRouter).WETH9();
+
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            require(_swaps[i].path.toAddress(_swaps[i].path.length - 20) == weth, "Payroll: Swap not native token");
+            uint256 amountIn = IUniswapV3(swapRouter).exactOutput{value: _swaps[i].amountInMax}(
                 IUniswapV3.ExactOutputParams({
                     path: _swaps[i].path,
                     recipient: msg.sender,
@@ -214,38 +311,22 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
                     amountInMaximum: _swaps[i].amountInMax
                 })
             );
-            totalAmountIn = totalAmountIn + amountIn;
-            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path.toAddress(0), amountIn);
+            emit SwapFinished(address(0), _swaps[i].path.toAddress(0), amountIn);
         }
 
-        uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
-        if (leftOver > 0) {
-            // return the leftover of _erc20TokenOrigin
-            TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
-        }
-        return totalAmountIn;
-    }
-
-    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
-        require(_start + 20 >= _start, "toAddress_overflow");
-        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
-        address tempAddress;
-
-        assembly {
-            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
-        }
-
-        return tempAddress;
+        // Explicitly request ETH refound
+        IUniswapV3(swapRouter).refundETH();
     }
 
     /**
-     * Perform the swap with Uniswap V2 and the transfer to the given addresses using Uniswap V2 interface.
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses.
      * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
      * @param _payments The array of the Payment data.
-     * @notice Currently the function only works with ERC20 tokens.
+     * @notice Swap ERC20 to ERC20.
+     * @notice Available to send ETH or ERC20.
      */
     function performSwapV2AndPayment(
         address _erc20TokenOrigin,
@@ -260,6 +341,31 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
 
         _performMultiPayment(_payments);
+        refundETH();
+    }
+
+    /**
+     * Perform the swap with Uniswap V2 and the transfer to the given addresses.
+     * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
+     * @param _deadline The unix timestamp after a swap will fail.
+     * @param _swaps The array of the Swaps data.
+     * @param _payments The array of the Payment data.
+     * @notice Swap ETH to ERC20.
+     * @notice Available to send ETH or ERC20.
+     */
+    function performSwapV2AndPaymentETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps,
+        Payment[] calldata _payments
+    ) external payable nonReentrant {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        if (_swaps.length > 0) {
+            _performSwapV2ETH(_totalAmountToSwap, _deadline, _swaps);
+        }
+
+        _performMultiPayment(_payments);
+        refundETH();
     }
 
     /**
@@ -268,50 +374,74 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ERC20 to ERC20.
      */
     function performSwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) external nonReentrant returns (uint256) {
+    ) external nonReentrant {
         require(isSwapV2, "Payroll: Not uniswapV2");
         require(_swaps.length > 0, "Payroll: Empty swaps");
-        return _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        _performSwapV2(_erc20TokenOrigin, _totalAmountToSwap, _deadline, _swaps);
+        refundETH();
     }
 
     /**
      * Perform the swap with Uniswap V2 to the given token addresses and amounts.
-     * @param _erc20TokenOrigin ERC20 token address to swap for another.
      * @param _totalAmountToSwap Total amount of erc20TokenOrigin to spend in swaps.
      * @param _deadline The unix timestamp after a swap will fail.
      * @param _swaps The array of the Swaps data.
+     * @notice Swap ETH to ERC20.
      */
+    function performSwapV2ETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps
+    ) external payable nonReentrant {
+        require(isSwapV2, "Payroll: Not uniswapV2");
+        require(_swaps.length > 0, "Payroll: Empty swaps");
+        _performSwapV2ETH(_totalAmountToSwap, _deadline, _swaps);
+        refundETH();
+    }
+
     function _performSwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
         uint32 _deadline,
         SwapV2[] calldata _swaps
-    ) internal returns (uint256) {
+    ) internal {
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
+        uint256 amountIn = 0;
+        address weth = IUniswapV2(swapRouter).WETH();
 
-        uint256 totalAmountIn = 0;
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
             require(_swaps[i].path[0] == _erc20TokenOrigin, "Payroll: Swap not token origin");
-            // return the amount spend of tokenIn
-            uint256 amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(
-                _swaps[i].amountOut,
-                _swaps[i].amountInMax,
-                _swaps[i].path,
-                msg.sender,
-                _deadline
-            )[0];
-            totalAmountIn = totalAmountIn + amountIn;
-            address[] calldata path = _swaps[i].path;
-            emit SwapFinished(_erc20TokenOrigin, path[path.length - 1], amountIn);
+            if (_swaps[i].path[_swaps[i].path.length - 1] == weth) {
+                // if tokenTo is WETH, the contract needs to receive it to use it in payments (if needed)
+                // then it will be refunded to msg.sender
+                amountIn = IUniswapV2(swapRouter).swapTokensForExactETH(
+                    _swaps[i].amountOut,
+                    _swaps[i].amountInMax,
+                    _swaps[i].path,
+                    address(this),
+                    _deadline
+                )[0];
+            } else {
+                // if tokenTo is any ERC20 the recipient is the msg.sender
+                amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(
+                    _swaps[i].amountOut,
+                    _swaps[i].amountInMax,
+                    _swaps[i].path,
+                    msg.sender,
+                    _deadline
+                )[0];
+            }
+            emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps[i].path.length - 1], amountIn);
         }
 
         uint256 leftOver = IERC20Basic(_erc20TokenOrigin).balanceOf(address(this));
@@ -319,23 +449,42 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             // return the leftover of _erc20TokenOrigin
             TransferHelper.safeTransfer(_erc20TokenOrigin, msg.sender, leftOver);
         }
-        return totalAmountIn;
+    }
+
+    function _performSwapV2ETH(
+        uint256 _totalAmountToSwap,
+        uint32 _deadline,
+        SwapV2[] calldata _swaps
+    ) internal {
+        require(msg.value >= _totalAmountToSwap, "Payroll: Not enough msg.value");
+        address weth = IUniswapV2(swapRouter).WETH();
+
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            require(_swaps[i].path.length > 0, "Payroll: Empty path");
+            require(_swaps[i].path[0] == weth, "Payroll: Swap not native token");
+            // return the amount spend of tokenIn
+            uint256 amountIn = IUniswapV2(swapRouter).swapETHForExactTokens{value: _swaps[i].amountInMax}(
+                _swaps[i].amountOut,
+                _swaps[i].path,
+                msg.sender,
+                _deadline
+            )[0];
+            address[] calldata path = _swaps[i].path;
+            emit SwapFinished(address(0), path[path.length - 1], amountIn);
+        }
     }
 
     /**
      * Perform the payments to the given addresses and amounts, public method.
      * @param _payments The array of the Payment data.
+     * @notice Available to send ETH or ERC20.
      */
     function performMultiPayment(Payment[] calldata _payments) external payable nonReentrant {
         _performMultiPayment(_payments);
+        refundETH();
     }
 
-    /**
-     * Perform the payments to the given addresses and amounts, internal method.
-     * @param _payments The array of the Payment data.
-     */
     function _performMultiPayment(Payment[] calldata _payments) internal {
-        uint256 totalETHSent = 0;
         for (uint256 i = 0; i < _payments.length; i++) {
             require(_payments[i].amountsToTransfer.length > 0, "Payroll: No amounts to transfer");
             require(
@@ -346,16 +495,8 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             if (_payments[i].token != address(0)) {
                 _performERC20Payment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             } else {
-                totalETHSent =
-                    totalETHSent +
-                    _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
+                _performETHPayment(_payments[i].token, _payments[i].receivers, _payments[i].amountsToTransfer);
             }
-        }
-
-        uint256 leftOver = msg.value - totalETHSent;
-        if (leftOver > 1) {
-            (bool success, ) = payable(msg.sender).call{value: leftOver}("");
-            require(success, "Payroll: ETH leftOver transfer failed");
         }
     }
 
@@ -398,7 +539,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         address _erc20TokenAddress,
         address[] calldata _receivers,
         uint256[] calldata _amountsToTransfer
-    ) internal returns (uint256) {
+    ) internal {
         uint256 acumulatedFee = 0;
         uint256 totalAmountSent = 0;
 
@@ -418,7 +559,18 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             require(success, "Payroll: ETH fee transfer failed");
         }
         emit FeeCharged(_erc20TokenAddress, feeAddress, acumulatedFee);
-
-        return totalAmountSent;
     }
+
+    /**
+     * Perform the refound of the leftover ETH.
+     */
+    function refundETH() internal {
+        uint256 leftOver = address(this).balance;
+        if (leftOver > 1) {
+            (bool success, ) = payable(msg.sender).call{value: leftOver}("");
+            require(success, "Payroll: ETH leftOver transfer failed");
+        }
+    }
+
+    receive() external payable {}
 }
