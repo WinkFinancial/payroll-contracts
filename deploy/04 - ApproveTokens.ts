@@ -48,6 +48,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const id = contractName + action + version;
 
 export default func;
-func.tags = [contractName + action, version, 'approve' ];
+func.tags = [contractName + action, version, 'approve'];
 func.id = id;
 func.dependencies = [contractName];

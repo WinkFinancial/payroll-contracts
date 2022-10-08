@@ -42,12 +42,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       if (faucetInfo.owner === ethers.constants.AddressZero) {
         await faucet.addFaucet(instance.address, ethers.utils.parseUnits('1000', 'ether'));
       }
-    }
+    };
 
     await addToFaucetJToken('jUSDT');
     await addToFaucetJToken('jDAI');
     await addToFaucetJToken('jWBTC');
-
 
     await verifyContract(network, deployResult, contractName);
 

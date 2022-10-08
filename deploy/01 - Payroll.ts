@@ -60,5 +60,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const id = contractName + version;
 
 export default func;
-func.tags = [contractName, version, 'Payroll','upgrade'];
+func.tags = [contractName, version, 'Payroll', 'upgrade'];
 func.id = id;
