@@ -14,7 +14,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-    const {deployments, getNamedAccounts, network} = hre;
+    const {deployments, getNamedAccounts, network, ethers} = hre;
     if (!network.live) return;
     if (!network.tags['staging']) return;
 
@@ -30,6 +30,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       gasLimit: 2000000,
       log: true,
     });
+
+    const faucet = await ethers.getContractAt(deployResult.abi, deployResult.address);
+
+    const addToFaucetJToken = async (symbol: string) => {
+      console.log(`Adding to Faucet ${symbol}`);
+      const deployed = await deployments.get(symbol);
+      const instance = await ethers.getContractAt(deployed.abi, deployed.address);
+      await instance.transfer(faucet.address, ethers.utils.parseUnits('100000', 'ether'));
+      const faucetInfo = await faucet.faucets(instance.address);
+      if (faucetInfo.owner === ethers.constants.AddressZero) {
+        await faucet.addFaucet(instance.address, ethers.utils.parseUnits('1000', 'ether'));
+      }
+    }
+
+    await addToFaucetJToken('jUSDT');
+    await addToFaucetJToken('jDAI');
+    await addToFaucetJToken('jWBTC');
+
 
     await verifyContract(network, deployResult, contractName);
 
@@ -47,5 +65,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const id = contractName + version;
 
 export default func;
-func.tags = [contractName, version];
+func.tags = [contractName, version, 'MultiFaucet'];
+func.dependencies = ['JToken'];
 func.id = id;

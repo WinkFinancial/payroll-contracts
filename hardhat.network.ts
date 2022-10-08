@@ -135,6 +135,26 @@ if (mnemonic) {
     },
     tags: ['staging'],
   };
+
+  networks.celo = {
+    live: true,
+    chainId: 42220,
+    url: 'https://forno.celo.org',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['prod'],
+  };
+
+  networks.celoAlfajoresTestnet = {
+    live: true,
+    chainId: 44787,
+    url: 'https://alfajores-forno.celo-testnet.org',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['staging'],
+  };
 }
 
 if (infuraApiKey && mnemonic) {

@@ -2,7 +2,7 @@ import {ethers, run} from 'hardhat';
 import {DeployResult} from 'hardhat-deploy/types';
 import {Network} from 'hardhat/types';
 
-const NETWORKS_NOT_SUPPORTED = ['rsk', 'rskTestnet', 'evmos', 'evmosTestnet'];
+const NETWORKS_NOT_SUPPORTED = ['rsk', 'rskTestnet', 'evmos', 'evmosTestnet', 'celo', 'celoAlfajoresTestnet'];
 
 export type TaskArgs = {
   address: string;
