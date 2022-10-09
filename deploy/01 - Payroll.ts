@@ -19,7 +19,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const {deploy} = deployments;
 
     const {deployer, feeAddress, swapRouter, isSwapRouterV2} = await getNamedAccounts();
-    const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false
+    const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false;
     const fee = 0;
 
     const deployResult = await deploy(contractName, {

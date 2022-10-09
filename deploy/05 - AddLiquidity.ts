@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import { BigNumber } from 'ethers';
+import {BigNumber} from 'ethers';
 
 const version = 'v0.1.0';
 const contractName = 'AddLiquidity';
@@ -21,7 +21,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     console.log(`Adding Liquidity ${version}`);
 
     const {deployer, swapRouter, isSwapRouterV2} = await getNamedAccounts();
-    const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false
+    const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false;
 
     if (!isSwapV2) {
       console.log(`Not swap V2`);
@@ -32,12 +32,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const factoryAddress = await swapRouterContract.factory();
     const factory = await ethers.getContractAt('IUniswapV2Factory', factoryAddress);
 
-
     const addLiquidity = async (symbolA: string, symbolB: string, amountA: BigNumber, amountB: BigNumber) => {
       console.log(`Creating Pair ${symbolA}/${symbolB}`);
       const deployedA = await deployments.get(symbolA);
       const deployedB = await deployments.get(symbolB);
-      const pairAddress = await factory.getPair(deployedA.address, deployedB.address)
+      const pairAddress = await factory.getPair(deployedA.address, deployedB.address);
       if (pairAddress !== ethers.constants.AddressZero) {
         console.log(`Already exists pair ${symbolA}/${symbolB}`);
         return true;
@@ -48,7 +47,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       await instanceB.approve(swapRouter, ethers.constants.MaxUint256);
       const timestamp = Date.now() + 1000 * 60 * 60;
       const deadline = Math.floor(timestamp / 1000);
-      console.log('Before adding liquidity')
+      console.log('Before adding liquidity');
       await swapRouterContract.addLiquidity(
         deployedA.address,
         deployedB.address,
@@ -64,9 +63,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       );
     };
 
-    await addLiquidity('jUSDT', 'jDAI', ethers.utils.parseUnits('10000000', 'ether'), ethers.utils.parseUnits('10000000', 'ether'));
-    await addLiquidity('jUSDT', 'jWBTC', ethers.utils.parseUnits('2000000', 'ether'), ethers.utils.parseUnits('100', 'ether'));
-    await addLiquidity('jDAI', 'jWBTC', ethers.utils.parseUnits('2000000', 'ether'), ethers.utils.parseUnits('100', 'ether'));
+    await addLiquidity(
+      'jUSDT',
+      'jDAI',
+      ethers.utils.parseUnits('10000000', 'ether'),
+      ethers.utils.parseUnits('10000000', 'ether')
+    );
+    await addLiquidity(
+      'jUSDT',
+      'jWBTC',
+      ethers.utils.parseUnits('2000000', 'ether'),
+      ethers.utils.parseUnits('100', 'ether')
+    );
+    await addLiquidity(
+      'jDAI',
+      'jWBTC',
+      ethers.utils.parseUnits('2000000', 'ether'),
+      ethers.utils.parseUnits('100', 'ether')
+    );
 
     return true;
   }
