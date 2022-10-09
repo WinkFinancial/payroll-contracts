@@ -20,6 +20,7 @@
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
+    "verify-blockscout": "yarn hardhat --network celoAlfajoresTestnet sourcify",
     "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy",
     "decodeTx": "hardhat run scripts/decodeTxParams.ts",
     "replayTx": "hardhat run scripts/replayTx.ts --network bsc",

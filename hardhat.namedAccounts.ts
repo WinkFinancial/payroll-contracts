@@ -58,21 +58,9 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     44787: '0xb3D06103af1A68026615E673d46047FAB77DB0Fa',
   },
   isSwapRouterV2: {
-    default: 'false',
-    1: 'false',
-    4: 'false',
-    56: 'true',
-    97: 'true',
-    40: 'true',
-    41: 'true',
-    30: 'true',
-    31: 'true',
-    137: 'true',
-    9000: 'true',
-    9001: 'true',
-    80001: 'true',
-    42220: 'true',
-    44787: 'true',
+    default: '0x0000000000000000000000000000000000000001', // true only adresses allowed here
+    1: '0x0000000000000000000000000000000000000000', // false only adresses allowed here
+    4: '0x0000000000000000000000000000000000000000',
   },
 };
 
