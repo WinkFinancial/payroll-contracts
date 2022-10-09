@@ -15,6 +15,7 @@
     "flatten": "hardhat flatten",
     "deploy": "hardhat deploy --network",
     "deploy-upgrade": "hardhat deploy --tags upgrade --network ",
+    "deploy-approve": "hardhat deploy --tags approve --network ",
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
     "clean": "hardhat clean",
@@ -74,7 +75,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.0",
-    "@wink-financial/wink-assets": "^1.0.9",
+    "@wink-financial/wink-assets": "^2.3.2",
     "solhint-plugin-prettier": "^0.0.5"
   }
 }

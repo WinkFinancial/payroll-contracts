@@ -97,5 +97,5 @@ const id = contractName + version;
 
 export default func;
 func.tags = [contractName, version, 'AddLiquidity'];
-func.dependencies = ['MultiFaucet'];
+func.dependencies = ['JToken'];
 func.id = id;

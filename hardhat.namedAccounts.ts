@@ -29,7 +29,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     9001: '0xFCd2Ce20ef8ed3D43Ab4f8C2dA13bbF1C6d9512F', // diffusion.fi v2
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
     42220: '0x1421bDe4B10e8dd459b3BCb598810B1337D56842', // sushiswap v2
-    44787: '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121', //ubeswap v2
+    44787: '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121', //ubeswap v2 https://app-alfajores.ubeswap.org/#/swap
   },
   jUSDT: {
     4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
