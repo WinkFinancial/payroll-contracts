@@ -21,7 +21,7 @@
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
-    "verify-blockscout": "yarn hardhat --network celoAlfajoresTestnet sourcify",
+    "verify-blockscout": "yarn hardhat sourcify --network",
     "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy",
     "decodeTx": "hardhat run scripts/decodeTxParams.ts",
     "replayTx": "hardhat run scripts/replayTx.ts --network bsc",
@@ -75,7 +75,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.0",
-    "@wink-financial/wink-assets": "^2.3.2",
+    "@wink-financial/wink-assets": "^2.3.7",
     "solhint-plugin-prettier": "^0.0.5"
   }
 }

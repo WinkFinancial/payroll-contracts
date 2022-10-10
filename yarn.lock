@@ -1384,10 +1384,10 @@
     "@webassemblyjs/ast" "1.11.1"
     "@xtuc/long" "4.2.2"
 
-"@wink-financial/wink-assets@^2.3.2":
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/@wink-financial/wink-assets/-/wink-assets-2.3.2.tgz#05e92d55c92c75f8ae311e695dcdc54734e59877"
-  integrity sha512-KsFa4M1sPol/jDRSXh1+uRf9Vnu8WjEyZL1/HFt8LTcCPFwSsm2z7J1j+pcPKqvCP246LFgjXN/wzMFOnVRsyw==
+"@wink-financial/wink-assets@^2.3.7":
+  version "2.3.7"
+  resolved "https://registry.yarnpkg.com/@wink-financial/wink-assets/-/wink-assets-2.3.7.tgz#6bae248be0c43aed4e303af4aed8ae0d30e6d1f3"
+  integrity sha512-O0GDrnjWYZwWTjDCRPYzwo2Iqx/zmlB4IZrOKR12zEq+6Q8Hg77obHIoYSh1BnMAZ9Lk+Pt5FIhRkaDR1sPw0g==
   dependencies:
     "@ethersproject/constants" "^5.7.0"
 
