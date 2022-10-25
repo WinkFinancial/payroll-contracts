@@ -30,6 +30,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
     42220: '0x1421bDe4B10e8dd459b3BCb598810B1337D56842', // sushiswap v2
     44787: '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121', //ubeswap v2 https://app-alfajores.ubeswap.org/#/swap
+    4689: '0x95cb18889b968ababb9104f30af5b310bd007fd8', // Mimo v2
+    4690: '0x95cb18889b968ababb9104f30af5b310bd007fd8', // Mimo v2
   },
   jUSDT: {
     4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
@@ -39,6 +41,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     9000: '0x5D6A72B51D5702A339C85CA9eB88914CA8b555cc',
     80001: '0x90596469bB8f8434FBb98c02B6E856e83a30AE78',
     44787: '0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e',
+    4690: '0x7aEc56b782c593b312a8c33eeFd8e50eEf975980',
   },
   jWBTC: {
     4: '0x879947a97a662E8294aFD601a901383D7731484e',
@@ -47,6 +50,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     9000: '0xf508585DF344C140B7a7E9bae540E054Cae82De8',
     80001: '0x988777898643893f44E4F086D8f747eEF21429E1',
     44787: '0xC71b05ba6A163aC512A920e81ef795E5b105448d',
+    4690: '0xAC42761C37d4467ff69082249B9E67D6b35d50cb',
   },
   jDAI: {
     4: '0x659b25Cbf47128BF952EFB97f27b0821F169A1E5',
@@ -56,6 +60,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     9000: '0x623F71f6d0339E4c639d7cA6303B54ACe40Be2aC',
     80001: '0x88F6B2bC66f4c31a3669b9b1359524aBf79CfC4A',
     44787: '0xb3D06103af1A68026615E673d46047FAB77DB0Fa',
+    4690: '0x8c1901c031Cdf42a846c0C422A3B5A2c943F4944',
   },
   isSwapRouterV2: {
     default: '0x0000000000000000000000000000000000000001', // true only adresses allowed here

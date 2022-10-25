@@ -155,32 +155,43 @@ if (mnemonic) {
     },
     tags: ['staging'],
   };
+
+  networks.iotex = {
+    live: true,
+    chainId: 4689,
+    url: 'https://babel-api.mainnet.iotex.io',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['prod'],
+  };
+
+  networks.iotexTestnet = {
+    live: true,
+    chainId: 4690,
+    url: 'https://babel-api.testnet.iotex.io',
+    accounts: {
+      mnemonic,
+    },
+    tags: ['staging'],
+  };
 }
 
 if (infuraApiKey && mnemonic) {
-  networks.kovan = {
+  networks.goerli = {
     live: true,
-    url: `https://kovan.infura.io/v3/${infuraApiKey}`,
-    chainId: 42,
+    url: `https://goerli.infura.io/v3/${infuraApiKey}`,
+    chainId: 5,
     accounts: {
       mnemonic,
     },
     tags: ['staging'],
   };
 
-  networks.ropsten = {
-    live: true,
-    url: `https://ropsten.infura.io/v3/${infuraApiKey}`,
-    chainId: 3,
-    accounts: {
-      mnemonic,
-    },
-    tags: ['staging'],
-  };
 
   networks.rinkeby = {
     live: true,
-    url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
+    url: `https://rinkeby.infura.io/v3/${infuraApiKey}`,
     blockGasLimit: 8000000,
     chainId: 4,
     accounts: {
