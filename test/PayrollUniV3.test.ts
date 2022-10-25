@@ -554,7 +554,7 @@ describe('Contract: Payroll UniV3', () => {
         await expect(
           payroll
             .connect(payer)
-            .performSwapV3AndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 100, swaps, [])
+            .performSwapV3AndPayment(tokenB.address, 1000, Math.floor(Date.now() / 1000) - 1000, swaps, [])
         ).to.be.revertedWith('Transaction too old');
       });
     });
