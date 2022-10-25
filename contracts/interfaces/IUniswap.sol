@@ -10,6 +10,8 @@ interface IUniswapV2 {
     //Uniswap V2
     function WETH() external pure returns (address);
 
+    function factory() external pure returns (address);
+
     function swapTokensForExactTokens(
         uint256 amountOut,
         uint256 amountInMax,
@@ -32,6 +34,24 @@ interface IUniswapV2 {
         address to,
         uint256 deadline
     ) external payable returns (uint256[] memory amounts);
+
+    // https://docs.uniswap.org/protocol/V2/reference/smart-contracts/router-02#addliquidity
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    )
+        external
+        returns (
+            uint256 amountA,
+            uint256 amountB,
+            uint256 liquidity
+        );
 }
 
 /**

@@ -15,11 +15,13 @@
     "flatten": "hardhat flatten",
     "deploy": "hardhat deploy --network",
     "deploy-upgrade": "hardhat deploy --tags upgrade --network ",
+    "deploy-approve": "hardhat deploy --tags approve --network ",
     "docgen": "hardhat docgen",
     "reinstall": "rm -rf node_modules/ && rm -f yarn.lock && yarn",
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "verify": "hardhat etherscan-verify --license AGPL-3.0 --force-license --solc-input --network",
+    "verify-blockscout": "yarn hardhat sourcify --network",
     "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy",
     "decodeTx": "hardhat run scripts/decodeTxParams.ts",
     "replayTx": "hardhat run scripts/replayTx.ts --network bsc",
@@ -30,8 +32,8 @@
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.12",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@openzeppelin/contracts": "^4.7.3",
+    "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@typechain/ethers-v5": "^8.0.5",
     "@typechain/hardhat": "^3.1.0",
     "@types/chai": "^4.3.0",
@@ -73,7 +75,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.0",
-    "@wink-financial/wink-assets": "^1.0.9",
+    "@wink-financial/wink-assets": "^2.3.7",
     "solhint-plugin-prettier": "^0.0.5"
   }
 }

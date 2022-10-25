@@ -1,8 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {networksByChainId} from '@wink-financial/wink-assets';
 import {verifyContract} from '../utils/verifyContract';
-
 const version = 'v0.2.0';
 const contractName = 'Payroll';
 
@@ -16,17 +14,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // await hre.run('compile');
 
     console.log(`Deploying ${contractName} ${version}`);
-    const {deployments, getNamedAccounts, network} = hre;
-    const chainId = network.config.chainId || 0;
-
-    const networkData = networksByChainId[chainId];
+    const {deployments, getNamedAccounts, network, ethers} = hre;
 
     const {deploy} = deployments;
 
     const {deployer, feeAddress, swapRouter, isSwapRouterV2} = await getNamedAccounts();
-
-    const routerAddress = networkData?.routerAddress || swapRouter;
-    const isSwapV2 = networkData?.isSwapV2 || isSwapRouterV2;
+    const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false;
     const fee = 0;
 
     const deployResult = await deploy(contractName, {
@@ -36,7 +29,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         execute: {
           init: {
             methodName: 'initialize',
-            args: [routerAddress, isSwapV2, feeAddress, fee],
+            args: [swapRouter, isSwapV2, feeAddress, fee],
           },
         },
       },
@@ -60,5 +53,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const id = contractName + version;
 
 export default func;
-func.tags = [contractName, version, 'upgrade'];
+func.tags = [contractName, version, 'Payroll', 'upgrade'];
 func.id = id;

@@ -11,19 +11,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     default: 0, // here this will by default take the first account as fee Address
   },
   proxyOwner: {
-    default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
-    1: 0,
-    4: 0, // For testnet use first account
-    56: 0,
-    97: 0, // For testnet use first account
-    40: 0,
-    41: 0, // For testnet use first account
-    30: 0,
-    31: 0, // For testnet use first account
-    137: 0,
-    9000: 0, // For testnet use first account
-    9001: 0,
-    80001: 0, // For testnet use first account
+    default: 0,
+    1337: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
   },
   swapRouter: {
     default: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -39,6 +28,8 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     9000: '0x72bd489d3cF0e9cC36af6e306Ff53E56d0f9EFb4', // diffusion.fi v2
     9001: '0xFCd2Ce20ef8ed3D43Ab4f8C2dA13bbF1C6d9512F', // diffusion.fi v2
     80001: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap.exchange v2
+    42220: '0x1421bDe4B10e8dd459b3BCb598810B1337D56842', // sushiswap v2
+    44787: '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121', //ubeswap v2 https://app-alfajores.ubeswap.org/#/swap
   },
   jUSDT: {
     4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
@@ -47,6 +38,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     31: '0x8672aDF72de0a0650c4001aaD8083042A4D18E88',
     9000: '0x5D6A72B51D5702A339C85CA9eB88914CA8b555cc',
     80001: '0x90596469bB8f8434FBb98c02B6E856e83a30AE78',
+    44787: '0xe2EBFC705d473C3dDd52CB49AF0bdE3132E8831e',
   },
   jWBTC: {
     4: '0x879947a97a662E8294aFD601a901383D7731484e',
@@ -54,6 +46,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     41: '0xB34fc9b45dd1E2eADC78E25f81e57e14AdA94C92',
     9000: '0xf508585DF344C140B7a7E9bae540E054Cae82De8',
     80001: '0x988777898643893f44E4F086D8f747eEF21429E1',
+    44787: '0xC71b05ba6A163aC512A920e81ef795E5b105448d',
   },
   jDAI: {
     4: '0x659b25Cbf47128BF952EFB97f27b0821F169A1E5',
@@ -62,21 +55,12 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     31: '0x4ec48Cb892Fa8D66bF87A43A5583c748fe8c1613',
     9000: '0x623F71f6d0339E4c639d7cA6303B54ACe40Be2aC',
     80001: '0x88F6B2bC66f4c31a3669b9b1359524aBf79CfC4A',
+    44787: '0xb3D06103af1A68026615E673d46047FAB77DB0Fa',
   },
   isSwapRouterV2: {
-    default: 'false',
-    1: 'false',
-    4: 'false',
-    56: 'true',
-    97: 'true',
-    40: 'true',
-    41: 'true',
-    30: 'true',
-    31: 'true',
-    137: 'true',
-    9000: 'true',
-    9001: 'true',
-    80001: 'true',
+    default: '0x0000000000000000000000000000000000000001', // true only adresses allowed here
+    1: '0x0000000000000000000000000000000000000000', // false only adresses allowed here
+    4: '0x0000000000000000000000000000000000000000',
   },
 };
 

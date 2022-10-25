@@ -241,6 +241,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         // transfer the totalAmountToSpend of erc20TokenOrigin from the msg.sender to this contract
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
+        // Celo does not use V3
         address weth = IUniswapV3(swapRouter).WETH9();
         uint256 amountIn = 0;
 
@@ -297,6 +298,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         SwapV3[] calldata _swaps
     ) internal {
         require(msg.value >= _totalAmountToSwap, "Payroll: Not enough msg.value");
+        // Celo does not use V3
         address weth = IUniswapV3(swapRouter).WETH9();
 
         for (uint256 i = 0; i < _swaps.length; i++) {
@@ -416,7 +418,11 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         // msg.sender must approve this contract for erc20TokenOrigin
         TransferHelper.safeTransferFrom(_erc20TokenOrigin, msg.sender, address(this), _totalAmountToSwap);
         uint256 amountIn = 0;
-        address weth = IUniswapV2(swapRouter).WETH();
+        address weth = address(0);
+        // Celo Native currency is an ERC20
+        if (block.chainid != 42220 && block.chainid != 44787) {
+            weth = IUniswapV2(swapRouter).WETH();
+        }
 
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
@@ -457,6 +463,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         SwapV2[] calldata _swaps
     ) internal {
         require(msg.value >= _totalAmountToSwap, "Payroll: Not enough msg.value");
+        // We should not use this method in Celo, instead use _performSwapV2
         address weth = IUniswapV2(swapRouter).WETH();
 
         for (uint256 i = 0; i < _swaps.length; i++) {
