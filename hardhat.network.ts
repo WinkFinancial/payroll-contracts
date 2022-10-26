@@ -188,7 +188,6 @@ if (infuraApiKey && mnemonic) {
     tags: ['staging'],
   };
 
-
   networks.rinkeby = {
     live: true,
     url: `https://rinkeby.infura.io/v3/${infuraApiKey}`,

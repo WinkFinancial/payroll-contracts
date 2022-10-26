@@ -12,7 +12,7 @@ const NETWORKS_NOT_SUPPORTED = [
   'telos',
   'telosTestnet',
   'iotex', // IoTeX is actualy using etherscan under the hood but they don't expose the API key
-  'iotexTestnet'
+  'iotexTestnet',
 ];
 
 export type TaskArgs = {
