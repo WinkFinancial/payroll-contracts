@@ -408,6 +408,26 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         refundETH();
     }
 
+    function _swapTokensForExactETH(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) internal virtual returns (uint256 amounts) {
+        return IUniswapV2(swapRouter).swapTokensForExactETH(amountOut, amountInMax, path, to, deadline)[0];
+    }
+
+    function _swapTokensForExactTokens(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) internal virtual returns (uint256 amounts) {
+        return IUniswapV2(swapRouter).swapTokensForExactTokens(amountOut, amountInMax, path, to, deadline)[0];
+    }
+
     function _performSwapV2(
         address _erc20TokenOrigin,
         uint256 _totalAmountToSwap,
@@ -421,7 +441,7 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         address weth = address(0);
         // Celo Native currency is an ERC20
         if (block.chainid != 42220 && block.chainid != 44787) {
-            weth = IUniswapV2(swapRouter).WETH();
+            weth = _weth();
         }
 
         for (uint256 i = 0; i < _swaps.length; i++) {
@@ -430,22 +450,22 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
             if (_swaps[i].path[_swaps[i].path.length - 1] == weth) {
                 // if tokenTo is WETH, the contract needs to receive it to use it in payments (if needed)
                 // then it will be refunded to msg.sender
-                amountIn = IUniswapV2(swapRouter).swapTokensForExactETH(
+                amountIn = _swapTokensForExactETH(
                     _swaps[i].amountOut,
                     _swaps[i].amountInMax,
                     _swaps[i].path,
                     address(this),
                     _deadline
-                )[0];
+                );
             } else {
                 // if tokenTo is any ERC20 the recipient is the msg.sender
-                amountIn = IUniswapV2(swapRouter).swapTokensForExactTokens(
+                amountIn = _swapTokensForExactTokens(
                     _swaps[i].amountOut,
                     _swaps[i].amountInMax,
                     _swaps[i].path,
                     msg.sender,
                     _deadline
-                )[0];
+                );
             }
             emit SwapFinished(_erc20TokenOrigin, _swaps[i].path[_swaps[i].path.length - 1], amountIn);
         }
@@ -457,6 +477,20 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
         }
     }
 
+    function _swapETHForExactTokens(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) internal virtual returns (uint256 amounts) {
+        return IUniswapV2(swapRouter).swapETHForExactTokens{value: amountInMax}(amountOut, path, to, deadline)[0];
+    }
+
+    function _weth() internal view virtual returns (address) {
+        return IUniswapV2(swapRouter).WETH();
+    }
+
     function _performSwapV2ETH(
         uint256 _totalAmountToSwap,
         uint32 _deadline,
@@ -464,18 +498,19 @@ contract Payroll is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeabl
     ) internal {
         require(msg.value >= _totalAmountToSwap, "Payroll: Not enough msg.value");
         // We should not use this method in Celo, instead use _performSwapV2
-        address weth = IUniswapV2(swapRouter).WETH();
+        address weth = _weth();
 
         for (uint256 i = 0; i < _swaps.length; i++) {
             require(_swaps[i].path.length > 0, "Payroll: Empty path");
             require(_swaps[i].path[0] == weth, "Payroll: Swap not native token");
             // return the amount spend of tokenIn
-            uint256 amountIn = IUniswapV2(swapRouter).swapETHForExactTokens{value: _swaps[i].amountInMax}(
+            uint256 amountIn = _swapETHForExactTokens(
                 _swaps[i].amountOut,
+                _swaps[i].amountInMax,
                 _swaps[i].path,
                 msg.sender,
                 _deadline
-            )[0];
+            );
             address[] calldata path = _swaps[i].path;
             emit SwapFinished(address(0), path[path.length - 1], amountIn);
         }

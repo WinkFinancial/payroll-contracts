@@ -1,8 +1,9 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {verifyContract} from '../utils/verifyContract';
+import {isIoTeX, verifyContract} from '../utils/verifyContract';
 const version = 'v0.2.0';
-const contractName = 'Payroll';
+const deployName = 'Payroll';
+let contractName = 'Payroll';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   async function main() {
@@ -13,7 +14,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-    console.log(`Deploying ${contractName} ${version}`);
+    console.log(`Deploying ${deployName} ${version}`);
     const {deployments, getNamedAccounts, network, ethers} = hre;
 
     const {deploy} = deployments;
@@ -21,6 +22,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const {deployer, feeAddress, swapRouter, isSwapRouterV2} = await getNamedAccounts();
     const isSwapV2 = isSwapRouterV2 !== ethers.constants.AddressZero ? true : false;
     const fee = 0;
+
+    if (isIoTeX(network)) {
+      // Iotex uses Mimo that has a slightly different ABI than uniswap https://iotexscan.io/address/0x95cb18889b968ababb9104f30af5b310bd007fd8#code
+      // that's why we used a modified version of Payroll contract
+      contractName = 'PayrollIotex';
+    }
+    console.log(`Use contract ${contractName}`);
 
     const deployResult = await deploy(contractName, {
       from: deployer,
@@ -50,8 +58,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
 };
 
-const id = contractName + version;
+const id = deployName + version;
 
 export default func;
-func.tags = [contractName, version, 'Payroll', 'upgrade'];
+func.tags = [deployName, version, 'upgrade'];
 func.id = id;

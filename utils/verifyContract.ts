@@ -15,6 +15,8 @@ const NETWORKS_NOT_SUPPORTED = [
   'iotexTestnet',
 ];
 
+export const isIoTeX = (network: Network) => network.config.chainId == 4689 || network.config.chainId == 4690;
+
 export type TaskArgs = {
   address: string;
   constructorArguments?: string[];
