@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {tokensByChainId} from '@wink-financial/wink-assets';
+import {isIoTeX} from '../utils/verifyContract';
 
 const version = 'v0.2.0';
 const contractName = 'Payroll';
@@ -30,8 +31,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       console.log('No tokens to approve');
       return;
     }
-
-    const Payroll = await deployments.get('Payroll');
+    const payrollName = isIoTeX(network) ? 'PayrollIotex' : 'Payroll';
+    const Payroll = await deployments.get(payrollName);
     const instance = await ethers.getContractAt(Payroll.abi, Payroll.address);
     await instance.approveTokens(tokensToApprove);
     console.log('Approved Tokens');

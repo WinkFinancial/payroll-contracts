@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {BigNumber} from 'ethers';
+import {isIoTeX} from '../utils/verifyContract';
 
 const version = 'v0.1.0';
 const contractName = 'AddLiquidity';
@@ -27,8 +28,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       console.log(`Not swap V2`);
       return true;
     }
-
-    const swapRouterContract = await ethers.getContractAt('IUniswapV2', swapRouter);
+    const swapName = isIoTeX(network) ? 'IMimoV2' : 'IUniswapV2';
+    const swapRouterContract = await ethers.getContractAt(swapName, swapRouter);
     const factoryAddress = await swapRouterContract.factory();
     const factory = await ethers.getContractAt('IUniswapV2Factory', factoryAddress);
 
@@ -36,7 +37,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       console.log(`Creating Pair ${symbolA}/${symbolB}`);
       const deployedA = await deployments.get(symbolA);
       const deployedB = await deployments.get(symbolB);
-      const pairAddress = await factory.getPair(deployedA.address, deployedB.address);
+      let pairAddress = await factory.getPair(deployedA.address, deployedB.address);
       if (pairAddress !== ethers.constants.AddressZero) {
         console.log(`Already exists pair ${symbolA}/${symbolB}`);
         return true;
@@ -48,20 +49,38 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       const timestamp = Date.now() + 1000 * 60 * 60;
       const deadline = Math.floor(timestamp / 1000);
       console.log('Before adding liquidity');
-      await swapRouterContract.addLiquidity(
-        deployedA.address,
-        deployedB.address,
-        amountA,
-        amountB,
-        amountA.sub(1),
-        amountB.sub(1),
-        deployer,
-        deadline,
-        {
-          gasLimit: 1500000,
-        }
-      );
-    };
+      if (isIoTeX(network)) {
+        console.log('isIoTeX');
+        await swapRouterContract.addLiquidity(
+          deployedA.address,
+          deployedB.address,
+          amountA,
+          amountB,
+          amountA.sub(1),
+          amountB.sub(1),
+          deployer,
+          deadline,
+          ethers.constants.AddressZero
+        );
+      } else {
+        await swapRouterContract.addLiquidity(
+          deployedA.address,
+          deployedB.address,
+          amountA,
+          amountB,
+          amountA.sub(1),
+          amountB.sub(1),
+          deployer,
+          deadline,
+          {
+            gasLimit: 1500000,
+          }
+        );
+      }
+
+      pairAddress = await factory.getPair(deployedA.address, deployedB.address);
+      console.log('Pair address', pairAddress);
+    }; // addLiquidity end
 
     await addLiquidity(
       'jUSDT',
