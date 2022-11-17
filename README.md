@@ -96,6 +96,8 @@ Polygon: 0x8441F4b54EC3E641d6144415AB2381315d7BC8Ec https://polygonscan.com/addr
 
 Rinkeby: 0x977AfF4027BeFCcB5D5a476c69447382232Ef339 https://rinkeby.etherscan.io/address/0x977AfF4027BeFCcB5D5a476c69447382232Ef339
 
+Goerli: 0xCcFc0d9f6fC18df7F5a1054BeFa84Af2D91C9644 https://goerli.etherscan.io/address/0xccfc0d9f6fc18df7f5a1054befa84af2d91c9644
+
 Binance Smart Chain Testnet: 0x4d995D5B936889B9A26A12B7b48a22A80F226fde https://testnet.bscscan.com/address/0x4d995D5B936889B9A26A12B7b48a22A80F226fde
 
 Telos EVM Testnet: 0xdcF72c0De33a53BACfa7562ab86375e4Fe90bC65 https://testnet.telos.net/v2/explore/evm/address/0xdcf72c0de33a53bacfa7562ab86375e4fe90bc65

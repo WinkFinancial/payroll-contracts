@@ -18,6 +18,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     default: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
     1: '0xE592427A0AEce92De3Edee1F18E0157C05861564', // uniswap v3
     4: '0xE592427A0AEce92De3Edee1F18E0157C05861564', // uniswap v3
+    5: '0xE592427A0AEce92De3Edee1F18E0157C05861564', // uniswap v3
     56: '0x10ED43C718714eb63d5aA57B78B54704E256024E', // pancakeswap v2
     97: '0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1', // apeswap v2 or 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 https://pancake.kiemtienonline360.com/
     40: '0xB9239AF0697C8efb42cBA3568424b06753c6da71', // zappy.finance v2
@@ -35,6 +36,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   },
   jUSDT: {
     4: '0xd0CdDBee19A25D65B0D905F7053Fdd19947ab370',
+    5: '0xD84B87568C215f7d03D9bc1B05D106028498Dc8e',
     97: '0x863C2c19208aC736324e438DF9a49F39c3dbA843',
     41: '0x623F71f6d0339E4c639d7cA6303B54ACe40Be2aC',
     31: '0x8672aDF72de0a0650c4001aaD8083042A4D18E88',
@@ -45,6 +47,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   },
   jWBTC: {
     4: '0x879947a97a662E8294aFD601a901383D7731484e',
+    5: '0xd76715fc071e5020A71ec48C2E9260C492e95Dd7',
     97: '0xCbBbdc113F480a83050C7Cd2420E100Cf6305858',
     41: '0xB34fc9b45dd1E2eADC78E25f81e57e14AdA94C92',
     9000: '0xf508585DF344C140B7a7E9bae540E054Cae82De8',
@@ -54,6 +57,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
   },
   jDAI: {
     4: '0x659b25Cbf47128BF952EFB97f27b0821F169A1E5',
+    5: '0x13BFE45D0D0f605b020fb62Cc5dd154b62D22d67',
     97: '0xD2E96745ddd7c6641866C9335909AeC605eF07A4',
     41: '0xC50C7a502e6aE874A6299f385F938aF5C30CB91d',
     31: '0x4ec48Cb892Fa8D66bF87A43A5583c748fe8c1613',
@@ -66,6 +70,7 @@ const networks: HardhatUserConfig['namedAccounts'] = {
     default: '0x0000000000000000000000000000000000000001', // true only adresses allowed here
     1: '0x0000000000000000000000000000000000000000', // false only adresses allowed here
     4: '0x0000000000000000000000000000000000000000',
+    5: '0x0000000000000000000000000000000000000000',
   },
 };
 
